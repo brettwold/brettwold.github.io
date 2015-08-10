@@ -1,0 +1,37 @@
+---
+layout: default
+title: Annalytics
+menutitle: Annalytics
+---
+
+  <div class="col-md-12">
+    <h1>Annalytics</h1>
+  </div>
+  <div class="col-md-7">
+    <h2>Who am I?</h2>
+    <p>I'm a pragmatic software developer, focused on mobile and online solutions. I've worked on and been responsible for the development of many online solutions over more than 17 years. This has included solutions for companies large and small.</p>
+
+    <h2>What do I do?</h2>
+    <p>Hands on development of digital solutions for mobile phone apps and websites as well as consultancy, advice and solutions for all aspects of online software and its development.</p>
+
+    <h2>Contact</h2>
+    <p>I'm interested in hearing from you if you have a digital project that you need help with, feel free to use the contact details below.</p>
+
+  </div>
+  <div class="col-md-5">
+
+    <h1>Blog</h1>
+    
+    <ul class="posts">
+      {% for post in site.posts %}
+        <li>
+          <span class="post-date">{{ post.date | date: "%b %-d, %Y" }}</span>
+          <a class="post-link" href="{{ post.url | prepend: site.baseurl }}">{{ post.title }}</a><br/>
+          <a class="post-link-subtitle" href="{{ post.url | prepend: site.baseurl }}">{{ post.subtitle }}</a>
+        </li>
+      {% endfor %}
+    </ul>
+
+    <!-- <p class="rss-subscribe">subscribe <a href="{{ "/feed.xml" | prepend: site.baseurl }}">via RSS</a></p> -->
+
+  </div>

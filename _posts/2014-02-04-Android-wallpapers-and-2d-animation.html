@@ -1,0 +1,279 @@
+---
+layout: post
+title:  "Android Live Wallpapers 2D Animation"
+subtitle: "Part 1 - The Basics"
+date:   2014-02-04
+categories: android live wallpapers
+tags: wallpapers
+author: Brett Cherrington
+---
+
+<section class="blog-intro">
+<div class="col-md-8">
+	<p>In this post I'm going to describe how to create a simple live wallpaper for Android. At the end you should be able to create a simple live wallpaper app and be ready to draw some graphics onto a standard android <code>Canvas</code>. The tutorial assumes some basic knowledge of android applications and assumes the reader is confident with Java. This post also assume you're also familiar with what a Live wallpaper is and how to at least install and use one on your Android device.</p>
+	<p>An important consideration when developing a live wallpaper of any kind for Android is to realise that you only have limited access to the resources of the handset. A wallpaper is by definition designed to run in the background and therefore the device will only provide limited CPU cycles to your wallpaper while the device performs its primary functions. So if you intend to implement something that requires a very high standard of graphics or will require a high framerate then the method described here is probably not the way to do it. For higher framerates or smoother motion you're going to have to look into OpenGL and even then the resources provided by the device will be limited. Also remember that nobody wants a live wallpaper that is too distracting or sucks the life out of the battery due to heavy processing load.</p>
+	<p>Having said that it is possible to create some really good effects using the standard android <code>Canvas</code> along with some simple 2D animation techniques to end up with a good looking result that doesn't kill the device and is not too distracting for the user.</p>
+</div>
+<div class="col-md-4">
+	<ul class="nav nav-pills nav-stacked">
+		{% for post in site.tags.wallpapers %}
+			<li>          
+				<a class="post-link" href="{{ post.url | prepend: site.baseurl }}">{{ post.title }}: {{ post.subtitle }}</a>
+			</li>
+		{% endfor %}
+	</ul>
+</div>
+</section>
+
+<div class="col-md-12">
+	<h2>Getting Started</h2>
+	<p>So first off lets create a stardard Android application (in Eclipse). At this point nothing special is required so just choose the standard options provided for a simple application, choose to go ahead an have your IDE create a default Activity we'll use it later to refine the wallpaper.</p>
+	<p>The first thing we'll create is a <code>android.service.wallpaper.WallpaperService</code> class. This is the main service that will run in the background to display the wallpaper. Within the class we'll define an Engine class that gets created when Android starts up your wallpaper.
+{% highlight java %}
+
+public class LiveWallpaper extends WallpaperService
+{
+	private static final String LOG_TAG = LiveWallpaper.class.getSimpleName();
+			
+	public LiveWallpaper()
+	{
+	}
+	
+	@Override
+	public Engine onCreateEngine()
+	{
+		return new WallpaperEngine();
+	}
+
+	private boolean mVisible = true;
+	private boolean mRunning = false;
+	private boolean mRestart = false;
+	private long mLastDrawTime;
+
+	public class WallpaperEngine extends Engine
+	{
+
+		//... Main wallpaper functional code goes in here
+		public WallpaperEngine()
+		{
+		}		
+		
+		@Override
+		public void onCreate(SurfaceHolder surfaceHolder)
+		{
+			setTouchEventsEnabled(true);
+			super.onCreate(surfaceHolder);
+		}
+
+		@Override
+		public void onVisibilityChanged(boolean visible)
+		{
+			mVisible = visible;
+		}
+
+		@Override
+		public void onSurfaceDestroyed(SurfaceHolder holder)
+		{
+			super.onSurfaceDestroyed(holder);
+		}
+	
+		@Override
+		public void onSurfaceChanged(SurfaceHolder holder, int format, int width, int height)
+		{
+			super.onSurfaceChanged(holder, format, width, height);
+		}
+	
+		@Override
+		public void onOffsetsChanged(float xOffset, float yOffset, float xOffsetStep, float yOffsetStep, int xPixelOffset, int yPixelOffset)
+		{			
+			super.onOffsetsChanged(xOffset, yOffset, xOffsetStep, yOffsetStep, xPixelOffset, yPixelOffset);
+		}
+		
+		@Override
+		public void onTouchEvent(MotionEvent event)
+		{
+		}
+	}
+}
+{% endhighlight %}
+<p>As you can see we've overridden some of the methods in the Engine class, most of which are hopefully obvious as to what the do for details see the <a href="http://developer.android.com/reference/android/service/wallpaper/WallpaperService.Engine.html">SDK docs here</a>. Notice that in here we have also enabled touch events in the onCreate method, this means that when the user touches anywhere on the screen and it is not intercepted by views above the wallpaper, the touch events will be passed through. This means you can use them within your app to respond to user actions.</p>
+<div class="panel panel-warning">
+  <div class="panel-heading">
+  	<div class="panel-title">WARNING</div>
+  </div>
+  <div class="panel-body">
+  	The <code>onOffsetsChanged</code> method is not supported well by all Android devices. Some manufacturers of handset don't seem to call this method at all so relying on it will mean you are restricting the use of your wallpaper to the devices that do call this method correctly. Also some launchers will rotate through a fixed number of home pages and stop, others will continue to rotate through in a carousel. If you are intending to perform some animations while the user is swiping through home pages it is better to implement you're own code using the events passed to the <code>onTouchEvent</code> method.
+  </div>
+ </div>
+<p>Once we have our basic wallpaper service we will now add a <code>Runnable</code> that will do the work of actually drawing the live wallpaper when required, along with a standard android <code>Handler</code> which we'll use to callback the <code>Runnable</code> at intervals we decide on. We'll place this code inside our Engine class implementation above, notice that we have referenced two new methods in here <code>draw()</code> and <code>restart()</code> which we'll implement next. The <code>Runnable</code> below is going to be called repeatedly at a rate we define by setting up a delayed post from the <code>Handler</code> object. This way we hand over the refreshing of the screen to the OS and make sure we don't overload the device by trying to take too many CPU cycle from it.</p>
+{% highlight java %}
+private final Handler mHandler = new Handler();
+public class DrawRunner implements Runnable {
+	
+	@Override
+	public void run()
+	{
+		if(mRestart)
+		{
+			mRestart = false;
+			restart();
+		}
+		else
+		{
+			draw();
+		}
+	}
+
+	public void setRestart(boolean restart)
+	{
+		mRestart = restart;
+	}
+};
+private final DrawRunner mDrawRunner = new DrawRunner();
+{% endhighlight %}
+<p>The draw method is where we'll do all the work we need to draw the actual wallpaper in the background onto the <code>Canvas</code> object. First of all we'll remove any previous callbacks that may have been setup in our handler from somewhere else. The next few lines deal with making a note of the current system time so the next time the draw method is called we have an accurate idea of how much time has past. This is important in order to ensure your animation doesn't look jerky regardless of the actual framerate; depsite all our best efforts here the actual framerate will be decided by the device, its capabilities and what other processes it is currently handling.</p>
+<p>Next we use the <code>getSurfaceHolder()</code> method to get a reference to the actual <code>SurfaceHolder</code> that contains and manages the <code>Canvas</code> object. Once we have the <code>SurfaceHolder</code> we can then lock the contained <code>Canvas</code> and finally do some drawing on it. I'll cover what you can do with the <code>Canvas</code> object in the next post. After we've finished drawing on the <code>Canvas</code> we unlock it to allow the holder to handle redrawing of it.</p>
+<p>Notice in the code below we have set a callback time of 10ms, you can of course adjust this to whatever you need but again you may not get the frame rate you want according to device capacity.</p>
+{% highlight java %}
+private void draw()
+{			
+	if(mRunning)
+	{				
+		mHandler.removeCallbacks(mDrawRunner);			
+
+		long drawtime = System.currentTimeMillis();
+		long delta = drawtime - mLastDrawTime;
+		mLastDrawTime = drawtime;
+		long delay = 10;
+		
+		SurfaceHolder holder = getSurfaceHolder();					
+		
+		Canvas canvas = null;
+		try
+		{
+			canvas = holder.lockCanvas();
+			if (canvas != null)
+			{		
+				// main draw loop code will go here...
+									
+			}
+		}
+		finally
+		{
+			if (canvas != null)
+			{
+				holder.unlockCanvasAndPost(canvas);
+			}
+		}
+
+		if (mVisible)
+		{									
+			mHandler.postDelayed(mDrawRunner, delay);		
+		}
+	}
+}
+{% endhighlight %}
+<p>The restart method is going to be called whenever the device is turned on or unlocked. This method can be used to do any setup your wallpaper may need before it starts animating again. In our case we are just going to restart it by firing off a post to the handler we defined above. 
+{% highlight java %}
+private void restart()
+{
+	mRunning = true;
+	mHandler.post(mDrawRunner);
+}
+{% endhighlight %}
+<p>It's important to make sure your wallpaper stops running when the device is locked, this will ensure that the wallpaper doesn't take up battery power while the device isn't being used. Also when the wallpaper is completely covered by another application there's no point in running the animation in the background as it'll just take up system resources. The code below shows us the changes we need to add to the the Engine to ensure the animation is stopped at these times, this is a simple matter of removing any callbacks on our handler and setting the running flag to false. We also register a new BroadcastReciever to listen for the ACTION_USER_PRESENT action event. This action will be fired when there is a user present using the device, this indicates that the device has been unlocked.</p>
+{% highlight java %}
+private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
+	@Override
+	public void onReceive(Context context, Intent intent) {
+		if (intent.getAction().equals(Intent.ACTION_USER_PRESENT)) {
+			restart();
+		}
+	}
+};
+
+@Override
+public void onVisibilityChanged(boolean visible)
+{
+	mVisible = visible;
+	if (visible)
+	{	
+		registerReceiver(mReceiver, new IntentFilter(Intent.ACTION_USER_PRESENT));
+		restart();
+	}
+	else
+	{
+		mRunning = false;
+		mHandler.removeCallbacks(mDrawRunner);
+		try
+		{
+			unregisterReceiver(mReceiver);
+		}
+		catch(IllegalArgumentException e)
+		{
+			// .. carry on
+		}
+	}
+}
+
+@Override
+public void onSurfaceDestroyed(SurfaceHolder holder)
+{
+	super.onSurfaceDestroyed(holder);
+
+	mVisible = false;
+	mHandler.removeCallbacks(mDrawRunner);
+}
+{% endhighlight %}
+<h3>Manifest</h3>
+<p>Before we can run our wallpaper we are also going to need to add some permissions and details of the new wallpaper service to the manifest. Notice within the new service section there's a reference to another xml file which contains some more definition of our wallpaper.</p>
+{% highlight xml %}
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.annalytics.livewallpapertutorial"
+    android:versionCode="1"
+    android:versionName="1.0" >
+
+    <uses-sdk android:minSdkVersion="8" android:targetSdkVersion="18" />
+    <uses-feature android:name="android.software.live_wallpaper" />
+    <permission android:name="android.permission.SET_WALLPAPER"/>    
+
+    <application
+        android:allowBackup="true"
+        android:icon="@drawable/ic_launcher"
+        android:label="@string/app_name"
+        android:theme="@style/AppTheme" >
+        <activity android:name="com.annalytics.livewallpapertutorial.MainActivity" 
+        	android:label="@string/app_name">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        
+        <service android:name="com.annalytics.livewallpapertutorial.LiveWallpaper" 
+        	android:enabled="true" 
+        	android:permission="android.permission.BIND_WALLPAPER" 
+        	android:label="@string/wallpaper_name">
+			<intent-filter>
+				<action android:name="android.service.wallpaper.WallpaperService"></action>
+			</intent-filter>
+			<meta-data android:name="android.service.wallpaper" android:resource="@xml/wallpaper"></meta-data>
+		</service>
+    </application>
+
+</manifest>
+{% endhighlight %}
+<p>The wallpaper XML file defined above simply contains details about the thumbnail to use for the wallpaper when selected by the user along with the longer description displayed.</p>
+{% highlight xml %}
+<?xml version="1.0" encoding="UTF-8"?>
+<wallpaper 
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	android:thumbnail="@drawable/ic_launcher"	
+	android:description="@string/wallpaper_description"  />
+{% endhighlight %}
+<p>We now have everything we need to run a live wallpaper so in theory you could go ahead and run it from here. However, obviously as of yet we haven't actually drawn anything to the screen so you'll just get a blank background. In the next post I'll show you how to actually draw to the <code>Canvas</code> along with so tips and tricks with regards to loading and moving Bitmap images.</p>
+
+<p><a href="{% post_url 2014-02-15-Android-wallpapers-and-2d-animation-part-2 %}">Part 2 - Drawing to the Canvas</a></p>
+
+</div>

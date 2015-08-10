@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Host your blog for pennies</title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="Pragmatic coding">
+    <link rel="canonical" href="http://annalytics.co.uk/cloud/2014/03/14/Host-your-blog-for-pennies/">
+
+
+	<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+	<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap-theme.min.css">
+    <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Oxygen:400,700,300" type="text/css">
+    <link rel="stylesheet" href="/css/main.css">
+
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+	<script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+</head>
+
+
+    <body>
+    <div class="container">
+	    <div class="navbar navbar-default" role="navigation">
+  <div class="container-fluid">
+    <div class="navbar-header">
+      <button class="navbar-toggle" type="button" data-toggle="collapse" data-target=".bs-navbar-collapse">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a href="/" class="navbar-brand">Annalytics</a>
+    </div>
+    <div class="collapse navbar-collapse bs-navbar-collapse">
+      <ul class="nav navbar-nav">
+        
+        
+        <li>
+          <a class="page-link" href="/about/">About</a>
+        </li>
+        
+        
+        
+        
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        
+      </ul>
+    </div>
+  </div>
+</div>
+
+	    <div class="page-content">
+	      <header class="post-header jumbotron">
+    <h1>Host your blog for pennies</h1>
+    <h2>Blog hosting with cloud files</h2>
+
+    <p class="meta">Mar 14, 2014 • Brett Cherrington</p>
+</header>
+
+<div class="post">
+  <article class="post-content">
+  		<section class="blog-intro">
+	<div class="col-md-12">
+		<p>This post covers the basics of how you can host your blog on the cloud for no more than a few pence a month. There are many different ways of doing this that vary depending on your choice of cloud vendor and your choice of local software. Regardless of whatever solutions you choose the basic principles we use here will be the same. We will generate a website locally and then arrange for this to be synchronised to the cloud hosting service online. The files generated locally will consist of nothing more than HTML, CSS and Javascript and therefore we don't need to rely on any server side technology to host our site. As the whole site will be built and managed for us locally, we only need to ensure it is updated to the cloud service when changes are made. Also, as the site will be hosted for us on a cloud based CDN we don't need to worry about availability, performance, security or reliability of any traditional web server/hosting. For this article we will be using <a href="http://aws.amazon.com" target="_blank">Amazon AWS</a> to do the hosting for us and locally we will be using <a href="http://jekyllrb.com/" target="_blank">Jekyll</a> to create and manage our website/blog.</p>
+		<h2>Local development setup</h2>
+		<p>The first step to getting started with this process is to develop your website. As mentioned above we're going to be Jekyll which is a Ruby based application. There are very good docs on setting it up on there website so I'm not going to repeat them here. If you are running Linux and already have (the right version) of Ruby installed then you should be able to get going from simply running the following commands.</p>
+<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>gem install jekyll
+<span class="nv">$ </span>jekyll new myblog
+<span class="nv">$ </span><span class="nb">cd </span>myblog
+~/myblog <span class="nv">$ </span>jekyll serve
+<span class="c"># =&gt; Now browse to http://localhost:4000</span></code></pre></div>
+		<p>If you are running windows then the process is a little more complicated but there is a great guide <a href="http://jekyll-windows.juthilo.com/">provided here</a>.</p>
+		<p>The main thing to get right is to ensure you are running thr right version of Ruby to go with your Jekyll version. At the time of writing this I had sucess running Jekyl 2.0.3 on Ruby 1.9.2. If you find any isseus running Jekyll then you probably need to make your Ruby version match. If you are running Linux and having trouble getting the right version of Ruby running you might want to take a look at the linux command <code>update-alternatives</code>. The following example will help you ensure you have the correct version of Ruby running even when you have multiple version installed.</p>
+<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>sudo update-alternatives --config ruby</code></pre></div>
+		<p>Once you have Jekyll up and running you should be able to browse to your website and see the basic starter application. You find that Jekyll has automatically created a folder structure and example website for you with a couple of example blog posts. One of the benefits of Jekyll is you can create layouts and templates that can be re-used throughout your site. This means you don't need to copy and paste the same boilerplate code in order to maintain your "static" website. You'll see that Jekyll builds your site for you and places the output into the <code>_site</code> folder. You will also find a <code>_post</code> folder which will contain all your blog posts. These can be labelled with tags, categories, publication date or anything else you choose to add to them as per normal blog articles using what they describe in the documentation as "front-matter". This is a little snippet of text that goes at the top of every file to describe it's attributes. Jekyll is a very flexible application that can help you build a website very quickly, I recommend you check out the docs to find out more.</p>
+
+		<h2>Cloud files setup</h2>
+		<p>Once you have finished working on your site you can set up your cloud service and make it live. As mentioned earlier we are going to use Amazon AWS to do this but you could choose almost any cloud vendor to use and the process would be very similar. If you don't already have an AWS account the first thing to do is <a href="http://aws.amazon.com" target="_blank">signup and create one</a>. This is totally free and instant to setup but you will need to provide credit card details so that you can use the AWS services fully.</p>
+		<p>Once you've logged in you'll be confronted with all the AWS services, head over to S3 which is Amazon's cloud storage service. Here you should see the S3 management console where we will need to create a new "bucket". A bucket is pretty much the same as an online folder but S3 allows us to set up fine grained access control and permissions for the folder using policies. So first of all lets create a bucket for us to use for our website. You should see a form similar to the one below.</p>
+		<img src="/images/s3_1.png" alt="Create a bucket form" class="img-responsive"/>
+		<p>When creating the name it's sensible to use the fully qualified domain name you are going to use for your website. So if you plan to redirect everyone to the www. sub-domain then be sure to use that in the bucket name. The reason for this will become clear later when we setup multiple buckets for a website to ensure correct redirection of the domain.</p>
+		<p>After you have created your bucket you now need to configure it to behave as a static web folder. If you click on the properties tab you should be see something similar to the screen below. In here we will need to setup the properties in the "Static Website Hosting" section and add a bucket policy in the "Permissions" section.</p>
+		<img src="/images/s3_2.png" alt="Bucket properties screen" class="img-responsive"/>
+		<p>The static website hosting section should have "Enable website hosting" selected as in the image above and you can go ahead and define two files for the index page and error page. Now we need to configure the bucket polict so that it is publically accessible. To do this we need to add the following policy. To find out more about bucket polices and some example of how to use them you can read some <a href="http://docs.aws.amazon.com/AmazonS3/latest/dev/example-bucket-policies.html" target="_blank">examples on Amazon here</a>.
+<div class="highlight"><pre><code class="language-json" data-lang="json"><span class="p">{</span>
+	<span class="nt">&quot;Version&quot;</span><span class="p">:</span> <span class="s2">&quot;2012-10-17&quot;</span><span class="p">,</span>
+	<span class="nt">&quot;Statement&quot;</span><span class="p">:</span> <span class="p">[</span>
+		<span class="p">{</span>
+			<span class="nt">&quot;Sid&quot;</span><span class="p">:</span> <span class="s2">&quot;AddPerm&quot;</span><span class="p">,</span>
+			<span class="nt">&quot;Effect&quot;</span><span class="p">:</span> <span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
+			<span class="nt">&quot;Principal&quot;</span><span class="p">:</span> <span class="s2">&quot;*&quot;</span><span class="p">,</span>
+			<span class="nt">&quot;Action&quot;</span><span class="p">:</span> <span class="s2">&quot;s3:GetObject&quot;</span><span class="p">,</span>
+			<span class="nt">&quot;Resource&quot;</span><span class="p">:</span> <span class="s2">&quot;arn:aws:s3:::www.myamazingwebsite.com/*&quot;</span>
+		<span class="p">}</span>
+	<span class="p">]</span>
+<span class="p">}</span></code></pre></div>
+		</p>
+		<p>To add the policy above click on the "Edit bucket policy" button and opcy and paste the above JSON code into the textarea.</p>
+		<p>The you can go ahead and save everything by clicking on the save button. You bucket will now be live and when it contains some website files you will be able to view it at the endpoint given in the Static Website Hosting section. At this point you can manually go ahead and upload your files from the <code>_site</code> folder and confirm to yourself it works by visiting the endpoint.In our example above the endpoint would be <code>www.myamazingwebsite.com.s3-website-eu-west-1.amazonaws.com</code>.</p>
+		<p>Now that we have our website and it's hosting setup we can go ahead and setup the DNS to allow visitors to our domain to view the website. This can be done one of two ways; by either directly adding the endpoint above into your current registrar's DNS control panel or by setting up Amazon's Route 53 to manage the DNS settings for your domain.<p>
+		<h3>DNS setup using you own registrar</h3>
+		<p>To configure your own registar to point to your new AWS S3 bucket all you have to do is create a CNAME entry against the domain and set it to the endpoint of the bucket given above. This is usually performed within the control panel of the domain registrar. Once you have done this and waited for upto 48hrs for the DNS settings to propagate you should be able to see your website on your own domain. Be sure that when you set the CNAME up you create it for the www record and there are no existing A records setup on the domain.</p>
+		<h3>DNS setup using Route 53</h3>
+		<p>If we choose to use the Route 53 service, this allows you to have more control over how your domain is setup. Essentially Route 53 replaces your existing domain registrar's nameservers with it's own so your domain can be setup and managed within it. This allows you to setup and create subdomains that point to other S3 buckets. One advantage of this is that you can then create a bucket for the main (naked) domain that simply redirects to your primary www sub-domain. Route 53 allows you to define record set entries for your domain that point directly to S3 buckets. The only restriction is that the bucket name must match the full domain name. This is why we chose to use www.myamazingwebsite.com as the bucket name above. We can then create an empty bucket called myamazingwebsite.com and have route 53 direct traffic to it. This new empty bucket will have the same setting as the www one above but we will choose to simply redirect all requests under the "Static Website Hosting" tab within the bucket properties. Amazon provides some useful documents on <a href="http://docs.aws.amazon.com/Route53/latest/DeveloperGuide/RoutingToS3Bucket.html" target="_blank">how to setup your domain for Route 53 here</a>.</p>
+		<h2>Synchronizing your website</h2>
+		<p>Obviously we could continue to manually copy our website to S3 everytime we make a change. However, if we want to make this simpler and more reliable we can use a tool called <a href="http://s3tools.org/s3cmd" target="_blank">s3cmd</a>. This tool provides a simple command line interface that once setup will synchronise all files from your local environment to your S3 bucket. The tool is still in beta at the moment but seems to work reliably. Before you can use the tool you will need to configure it using the cmd.
+<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>s3cmd --configure</code></pre></div>
+		During this process	you will be asked to provide the two keys that are required to access your AWS services. You can find these under your account settings -> Security Credentials -> Access Keys. You will also be asked about encryption and use of SSL. I recommend you use both of these to keep your security credentials as secure as possible.</p>
+		<p>Once you have configured s3cmd with your account details you can then simply use it to copy your files by navigating to the <code>_site</code> folder and using the command.
+<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>s3cmd sync ./ s3://www.myamazingwebsite.com/</code></pre></div>
+		</p>
+		<h2>Summary</h2>
+		<p>Using the process described above is a great way to cheaply host your website. Even though the content hosted is static by using Jekyll and s3cmd we have ensured that updates and change can be made efficiently and quickly. The use of a cloud based file hosting service means we no longer have to worry about maintaining a webserver and all the associated software. The website content is distributed globally and scaled across many servers so backup and performance become a thing of the past. This setup is ideal for small websites, blogs or brochureware style sites. In terms of cost it's about as low as it gets and considering the factors just mentioned it's well worth it. For instance hosting this site and several others costs approximately $0.53 a month! With most of that cost coming from the Route 53 service, without the Route 53 aspect this site cost approximately $0.02 a month to host!</p>
+	</div>
+</section>
+  </article>
+</div>
+	    </div>
+	</div>
+	    
+	<div class="footer">
+  <div class="container site-footer">
+    <div class="col-md-5">
+      <ul>
+        <li>Annalytics Ltd</li>
+        <li><a href="mailto:brett@annalytics.co.uk">brett@annalytics.co.uk</a></li>
+        <li><a href="https://www.linkedin.com/pub/brett-cherrington/0/6a/862">LinkedIn</a></li>
+      </ul>
+    </div>
+
+    <div class="col-md-2">
+      <ul>
+        <li>
+          <a href="https://github.com/Annalytics">
+            <span class="icon github">
+              <svg version="1.1" class="github-icon-svg" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+                 viewBox="0 0 16 16" enable-background="new 0 0 16 16" xml:space="preserve">
+                <path fill-rule="evenodd" clip-rule="evenodd" fill="#C2C2C2" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761
+                c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32
+                c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472
+                c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037
+                C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65
+                c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261
+                c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082
+                c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129
+                c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/>
+              </svg>
+            </span>
+            <span class="username">GitHub</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <div class="col-md-5" style="text-align: right; ">
+      <p class="text">Pragmatic coding</p>
+    </div>
+  </div>
+</div>
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-53502021-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
+    </body>
+</html>

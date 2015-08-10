@@ -1,0 +1,295 @@
+---
+layout: post
+title:  "Android Live Wallpapers 2D Animation"
+subtitle: "Part 2 - Drawing to the Canvas"
+date:   2014-02-15
+categories: android live wallpapers
+tags: wallpapers
+author: Brett Cherrington
+---
+
+<section class="blog-intro">
+<div class="col-md-8">
+	<p>In the previous post we covered setting up a simple live wallpaper so we could drwa something on to the background using a <code>Canvas</code> object. In this post we'll cover some basic animation techniques and how to load and display Bitmaps on a wallpaper.</p>
+</div>
+<div class="col-md-4">
+	<ul class="nav nav-pills nav-stacked">
+		{% for post in site.tags.wallpapers %}
+			<li>          
+				<a class="post-link" href="{{ post.url | prepend: site.baseurl }}">{{ post.title }}: {{ post.subtitle }}</a>
+			</li>
+		{% endfor %}
+	</ul>
+</div>
+</section>
+
+<div class="col-md-12">
+	<h2>Drawing to the Canvas</h2>
+	<p>Now that we've defined our <code>draw()</code> all we have to do is fill out the code that we want to add to do the actual drawing. First of all lets look at drawing some basic shapes and moving them around the screen a bit. To keep thing tidy we're going to create a player class that we will use to hold all our drawing code in one place.</p>
+
+{% highlight java %}
+public class CanvasPlayer
+{
+	public void draw(Canvas canvas, int height, int width, long delta)
+	{
+		
+	}
+}
+{% endhighlight %}
+
+<p>We are also going to start keeping track of the screen height and width. This could change while our wallpaper is running if the user rotates the device. The height and width is supplied to us by the OS via the <code>onSurfaceChnaged</code> method. Then we are simply going to call our <code>CanvasPlayer</code> from our main draw method passing in the canvas, the current height and width and the amount of time that has past since the last draw update.</p>
+
+{% highlight java %}
+private int mWidth, mHeight;
+private CanvasPlayer mPlayer;
+
+public WallpaperEngine()
+{
+}		
+
+@Override
+public void onCreate(SurfaceHolder surfaceHolder)
+{
+	mPlayer = new CanvasPlayer();
+	setTouchEventsEnabled(true);
+	super.onCreate(surfaceHolder);
+}
+
+@Override
+public void onSurfaceChanged(SurfaceHolder holder, int format, int width, int height)
+{
+	Log.d(LOG_TAG, "onSurfaceChanged: (" + width + "x" + height + ")");	
+	mWidth = width;
+	mHeight = height;
+	restart();			
+	super.onSurfaceChanged(holder, format, width, height);
+}
+
+...
+
+private void draw()
+{			
+	if(mRunning)
+	{				
+		mHandler.removeCallbacks(mDrawRunner);			
+
+		long drawtime = System.currentTimeMillis();
+		long delta = drawtime - mLastDrawTime;
+		mLastDrawTime = drawtime;
+		long delay = 10;
+		
+		SurfaceHolder holder = getSurfaceHolder();					
+		
+		Canvas canvas = null;
+		try
+		{
+			canvas = holder.lockCanvas();
+			if (canvas != null)
+			{		
+				// main draw loop code will go here
+				mPlayer.draw(canvas, mHeight, mWidth, delta);				
+			}
+		}
+		finally
+		{
+			if (canvas != null)
+			{
+				holder.unlockCanvasAndPost(canvas);
+			}
+		}
+
+		if (mVisible)
+		{									
+			mHandler.postDelayed(mDrawRunner, delay);		
+		}
+	}
+}
+{% endhighlight %}
+<p>Finally its time to start drawing for a full info checkout the <a href="http://developer.android.com/reference/android/graphics/Canvas.html" target="_blank">SDK here</a>. For the purposes of this demo we're going to draw a square and then rotate it around. So first lets draw our square, if you're new to drawing on the <code>Canvas</code> the code below sets up a <code>android.graphics.Paint</code> object which will draw in solid red. Next we setup a <code>android.graphics.Rect</code> which will contain and square and final call <code>drawRect</code> to draw it to the <code>Canvas</code>. If you run this wallpaper as is, after setting it you should see a red square in the middle of the screen. Not very dynamic or "live" so now lets add some movement.</p>
+{% highlight java %}
+public class CanvasPlayer
+{
+	public void draw(Canvas canvas, int height, int width, long delta)
+	{
+		int squaresize = 100;
+
+		Paint p = new Paint();
+		p.setColor(Color.RED);
+		p.setStyle(Style.FILL_AND_STROKE);
+		
+		Rect r = new Rect(0, 0, squaresize, squaresize);
+		r.offsetTo(width/2 - squaresize/2, height/2 - squaresize/2);
+		
+		canvas.drawRect(r, p);
+	}
+}
+{% endhighlight %}
+<p>So now lets try and rotate our square on the screen. The easiest way of doing this is to rotate the <code>Canvas</code> object and then draw our square on it.</p>
+{% highlight java %}
+public class CanvasPlayer
+{
+	private float mAngle = 0;
+	
+	public void draw(Canvas canvas, int height, int width, long delta)
+	{
+		int squaresize = 100;
+
+		Paint p = new Paint();
+		p.setColor(Color.RED);
+		p.setStyle(Style.FILL_AND_STROKE);
+		
+		Rect r = new Rect(0, 0, squaresize, squaresize);
+		r.offsetTo(width/2 - squaresize/2, height/2 - squaresize/2);
+				
+		mAngle += 10;
+		if(mAngle > 360)
+		{
+			mAngle -= 360;
+		}
+		
+		canvas.rotate(mAngle, width/2, height/2);
+		
+		canvas.drawRect(r, p);		
+	}
+}
+{% endhighlight %}
+<p>Wait a minute! It looks like a spinning star what's going on?? At the moment the <code>Canvas</code> we are drawing on is just rotated every call and then we draw a new square on top. The <code>SurfaceHolder</code> reuses the same <code>Canvas</code> object everytime so we don't get a clean one to draw on. The solution here is to simply wipe the <code>Canvas</code> clean everytime. The quickest way to do this is to just fill the Canvas with a color as below.</p>
+{% highlight java %}
+	canvas.drawColor(Color.BLACK);
+{% endhighlight %}
+<p>This time when you run the wallpaper you should see what looks like a spinning square. Depending on your device and what its doing you may notice the spinning looks a little jerky. As mentioned earalier this is because there's no gaurentee how often and when your draw method will be called. To smooth out the animation there's a number of approaches we could take but for this example we're going to use a <code>android.view.animation.Interpolator</code>. There are lots of implementations of this class included in the Android SDK, for this case we'll use a <a href="http://developer.android.com/reference/android/view/animation/LinearInterpolator.html"><code>android.view.animation.LinearInterpolator</code></a> and the delta time passed into the draw method. So lets say we want our square to rotate by 90 degrees every second (or one full rotation every 4 seconds) our CanvasPlayer class would now look like this.</p>
+{% highlight java %}
+
+public class CanvasPlayer
+{
+	private static final long ROTATE_TIME = 4000;
+	
+	private float mAngle = 0;
+	private LinearInterpolator mInter = new LinearInterpolator();
+	private long mTime = 0;
+	
+	public void draw(Canvas canvas, int height, int width, long delta)
+	{
+		canvas.drawColor(Color.BLACK);
+		
+		mTime += delta;
+		if(mTime > ROTATE_TIME)
+		{
+			mTime -= ROTATE_TIME;
+		}
+		float perc = mInter.getInterpolation(mTime/(float)ROTATE_TIME);
+		mAngle = 360*perc;
+		
+		int squaresize = 100;
+
+		Paint p = new Paint();
+		p.setColor(Color.RED);
+		p.setStyle(Style.FILL_AND_STROKE);
+		
+		Rect r = new Rect(0, 0, squaresize, squaresize);
+		r.offsetTo(width/2 - squaresize/2, height/2 - squaresize/2);
+				
+		canvas.rotate(mAngle, width/2, height/2);
+		
+		canvas.drawRect(r, p);		
+	}
+}
+
+{% endhighlight %}
+<p>If you run this wallpaper now you should see the square rotating much more smoothly. You'll still get the odd jerk which is due to all the reasons we've discussed.</p>
+<p>Ok so lets say now we want to add to our plain rotating square by adding a Bitmap. The changes to the CanvasPlayer for this are shown below. As you can see this code uses the guideline recommended code for <a href="http://developer.android.com/training/displaying-bitmaps/load-bitmap.html">loading a Bitmap</a>. This code ensures that the bitmap loaded is never larger than the screen in an attempt to not break the in-built memory limits of the JVM. Of course it is still possible to break this limit by loading a large enough image, but if you do load a Bitmap that is too large it's unlikely you'd ever be able to animate is sensibly using this method. If you want to keep a fast refresh rate and something that impresses your user, you'll need to keep your images small.</p>
+{% highlight java %}
+public class CanvasPlayer
+{
+	private static final long ROTATE_TIME = 4000;
+	
+	private Context mContext;
+	private float mAngle = 0;
+	private LinearInterpolator mInter = new LinearInterpolator();
+	private long mTime = 0;
+	private Bitmap mBitmap;
+	private int mBitmapWidth, mBitmapHeight;
+	private int mWidth, mHeight;
+	
+	protected BitmapFactory.Options mOptions;
+	
+	public CanvasPlayer(Context c)
+	{
+		mContext = c;
+		mOptions = new BitmapFactory.Options();
+	}
+	
+	public void draw(Canvas canvas, int height, int width, long delta)
+	{
+		mWidth = width;
+		mHeight = height;
+		if(mBitmap == null)
+		{
+			mBitmap = getScaledImage(R.drawable.ic_launcher, true);
+			mBitmapWidth = mBitmap.getWidth();
+			mBitmapHeight = mBitmap.getHeight();
+		}
+		
+		canvas.drawColor(Color.BLACK);
+		
+		mTime += delta;
+		if(mTime > ROTATE_TIME)
+		{
+			mTime -= ROTATE_TIME;
+		}
+		float perc = mInter.getInterpolation(mTime/(float)ROTATE_TIME);
+		mAngle = 360*perc;
+		
+		int squaresize = 100;
+
+		Paint p = new Paint();
+		p.setColor(Color.RED);
+		p.setStyle(Style.FILL_AND_STROKE);
+		
+		Rect r = new Rect(0, 0, squaresize, squaresize);
+		r.offsetTo(width/2 - squaresize/2, height/2 - squaresize/2);
+				
+		canvas.rotate(mAngle, width/2, height/2);
+		canvas.drawRect(r, p);
+		
+		canvas.drawBitmap(mBitmap, width/2, height/2, null);
+	}
+	
+	protected Bitmap getScaledImage(int drawable, boolean width)
+	{
+		mOptions.inTargetDensity = 0;
+		mOptions.inScaled = false;
+		mOptions.inSampleSize = 1;
+		mOptions.inJustDecodeBounds = true;
+
+		BitmapFactory.decodeResource(mContext.getResources(), drawable, mOptions);
+		if (width)
+		{
+			if (mOptions.outWidth > mWidth)
+			{
+				mOptions.inSampleSize = (int) Math.round((float) mOptions.outWidth / (float) mWidth);
+			}
+		}
+		else
+		{
+			if (mOptions.outHeight > mHeight)
+			{
+				mOptions.inSampleSize = (int) Math.round((float) mOptions.outHeight / (float) mHeight);
+			}
+		}
+
+		return getBitmapUsingPreviousSettings(drawable);
+	}
+	
+	protected Bitmap getBitmapUsingPreviousSettings(int drawable)
+	{
+		mOptions.inJustDecodeBounds = false;
+		Bitmap b = BitmapFactory.decodeResource(mContext.getResources(), drawable, mOptions);
+		return b;
+	}
+}
+{% endhighlight %}
+<h2>Summary</h2>
+<p>So in this post we've found out how to start doing some animation on the <code>Canvas</code> for a live wallpaper as well as how to efficently load a Bitmap to be displayed and animated. In a future post we'll look at some refinements we can make to our wallpaper in the mean time you can find a link to the <a href="https://github.com/Annalytics/LiveWallpaperTutorial" target="_blank">full source for this post here</a>.</p>
+
+</div>

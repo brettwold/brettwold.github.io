@@ -1,0 +1,272 @@
+---
+layout: post
+title:  "Open Source Soup"
+subtitle: "A guide to using PHP, Composer, Slim, Twig, Illuminate Database and Bootstrap to build a simple but powerful website"
+date:   2014-08-25
+categories: php
+tags: php slim composer slim twig eloquent bootstrap
+author: Brett Cherrington
+---
+
+<section class="blog-intro">
+	<div class="col-md-12">
+		<p>A few weeks ago I was asked to produce a simple website for a client. The website had to make use of some data in a MySQL database, be able to upload new data via a CSV file, look good (!) and (as usual) be built in less than a day. So I decided this would be a chance to have ago at something a bit different and learn to use some new libraries. The only restriction was that it must use PHP.</p>
+		
+		<h2>Project setup with Composer</h2>
+		<p>If you haven't used Composer before then set it up as per the <a href="https://getcomposer.org/doc/00-intro.md#downloading-the-composer-executable">installation instructions here</a>. Once its installed you should be able to run it from the command line. To see what version you have you can run the command below.</p>
+{% highlight bash %}
+composer -V
+{% endhighlight %}
+		<i>If the command above doesn't work then its likely there is a path problem, check your PATH environment variable.</i>
+		<p>To set the rest of the PHP libraries up is now a doddle and all we need to do is create the composer.json file and let Composer do it's stuff. To setup all the libraries we are going to need for this project the contents of the composer.json file is.</p>
+{% highlight json %}
+{
+	"name": "Soup",
+	"require": {
+		"php": ">=5.3.0",
+		"slim/slim": "2.*",
+		"slim/views": "0.1.*",
+		"twig/twig": "1.*",
+		"illuminate/database": "*"
+	}
+}
+{% endhighlight %}
+		<p>So all we need to do to get our project setup is to put the composer.json file in a folder and run the command.</p>
+{% highlight bash %}
+composer install
+{% endhighlight %}
+		<p>If it all works you should see some output describing the libraries being downloaed and in your project you should end up with a new vendor folder containing all the libraries.</p>
+		<h2>Slim framework</h2>
+		<p>Unfortunately Composer can't do everything for us so now we need some code to glue all these libraries together. Slim is a micro framework and doesn't impose any directory structure on a project. So for the purpsoes of this one we're going to use the following. </p>
+		
+<pre>
+soup/
+  templates/
+  models/
+  vendor/
+  www/
+    css/
+    images/
+    js/
+    index.php
+</pre>
+		<p>In the above we have a www folder which will contain all our public files served by the webserver including the main index.php. The templates folder will hold our Twig template files and the models folder will contain our database model files.</p>
+		<p>So first up lets setup some Slim code in our index.php file.</p>
+{% highlight php %}
+<?php
+require '../vendor/autoload.php';
+
+$twigView = new \Slim\Views\Twig();
+
+$app = new \Slim\Slim(array(    
+    'view' => $twigView,
+    'templates.path' => '../templates/',
+	'mode' => 'production'
+));
+
+$app->get('/', function() use ($app) {
+	$app->render("index.html", array('hello' => 'Hello World'));
+});
+
+$app->run();
+?>
+
+{% endhighlight %}
+	<p>As you can see above there's not a lot to it. Slim uses closures which is where you define how responses to web calls are handled. In Slim you handle all types of HTTP calls (GET/POST etc) and define separate closures for each. In this case you can see that the app will handle a HTTP GET to the root URL. Also as you can see we've setup Twig and set it as the view handler for Slim. Within the handler currently we're only doing one thing which is using the <code>$app->render()</code> function which passes an array of data to the Twig template index.html.</p>
+	<p>Before we can see our output we also need to create some Twig templates. To do this we'll create two files base.html and index.html. The base.html will contain the boilerplate code that will wrap our actual HTML content.</p>
+	<h3>base.html</h3>
+{% highlight html %}
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="content-type" content="text/html;charset=UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+	<title>Soup</title>
+
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="description" content="">
+	<link rel="canonical" href="http://localhost/">
+</head>
+<body>
+	<div>
+		<div class="main-content">	
+		{% raw %}{% block content %}{% endblock %}{% endraw %}
+		</div> 
+	</div>
+</body>
+</html>
+{% endhighlight %}
+	<h3>index.html</h3>
+{% highlight html %}
+{% raw %}
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container">
+	<div class="row">
+		<div class="col-md-12">
+			<h1>{{ hello }}</h1>
+			<p>Simple website template built with Slim, Twig, Illumate DB</p>
+		</div>
+	</div>
+</div>
+
+{% endblock %}
+{% endraw %}
+{% endhighlight %}
+	<p>These two files should be placed into the templates folder we created earlier. As you can see the index.html temnplate extends base.html so when twig runs you will get a full HTML page including the standard body and head.</p>
+	<p>Now all we need to do is run a webserver and see what we get. If you are using PHP 5.4 or greater then you can use the inbuilt PHP webserver to test your site. Otherwise you'll need to setup apache or nginx to point a virtualhost to the www folder. To use PHP cd into your project folder and use the following command which will start a webserver on port 8090. Then just browse to http://localhost:8090 and if all went well you should see our Hello World page.</p>
+{% highlight bash %}
+php -S localhost:8090
+{% endhighlight %}
+
+	<h2>Using Illuminate to connect to the DB</h2>
+	<p>The next step is to connect to our MySQL DB and get/put some data. This article assumes you've already got a DB setup and created a user/password to access a schema on it. For the purpose of this example we're going to have a single table in the DB created using the SQL below.</p>
+{% highlight sql %}
+CREATE TABLE `test`.`soups` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `name` VARCHAR(45) NULL,
+  `temperature` VARCHAR(45) NULL,
+  `updated_at` DATETIME NULL,
+  `created_at` DATETIME NULL,
+  PRIMARY KEY (`id`));
+{% endhighlight %}
+
+		<p>Now lets setup our DB connection by adding the following lines to our index.php file.</p>
+{% highlight php %}
+<?php
+require '../vendor/autoload.php';
+
+$twigView = new \Slim\Views\Twig();
+
+$app = new \Slim\Slim(array(
+		'view' => $twigView,
+		'templates.path' => '../templates/',
+		'mode' => 'production'
+));
+
+use Illuminate\Database\Capsule\Manager as Capsule;
+$capsule = new Capsule;
+
+$capsule->addConnection(array(
+		'driver'    => 'mysql',
+		'host'      => 'localhost',
+		'database'  => 'test',
+		'username'  => 'soup',
+		'password'  => 'soup',
+		'prefix'    => '',
+		'charset'   => 'utf8',
+		'collation' => 'utf8_general_ci',
+));
+
+$capsule->bootEloquent();
+$capsule->setAsGlobal();
+$conn = $capsule->connection();
+
+...
+?>
+{% endhighlight %}
+
+	<p>As you can see we've used the <code>Capsule</code> class to setup a connection the DB and we are using the standard mysql driver.</p>
+	<p>We also now need to create a model object which we will use with Illuminate\Eloquent (ORM) to read and write data to the DB. We've only got one simple table so we need a simple model object which extends the Illuminate\Eloquent\Model class.</p>
+{% highlight php %}
+<?php
+namespace Soup;
+
+use Illuminate\Database\Eloquent\Model as Model;
+
+class Soup extends Model
+{
+	protected $fillable = array('name', 'temperature');
+}
+?>
+{% endhighlight %}
+	<p>In theory in the above we can leave out the <code>$fillable</code> parameter but by adding this Eloquent allows us to create a Soup object by simply passing an array to the insert method which we'll look at later. The above file should be named Soup.php and placed in the models folder we created earlier.</p>
+	<p>We also need to add the models folder to the PHP classpath so that they can be used. To do this we need to make some additions to the composer.json file and then get composer to rebuild the autoload.php for us. Below you can see the additional classmap section we need to add to our composer.json file.</p>
+{% highlight json %}
+{
+    "name": "Soup",
+    "require": {
+        "php": ">=5.3.0",
+        "slim/slim": "2.*",
+        "slim/views": "0.1.*",
+        "twig/twig": "1.*",
+        "illuminate/database": "*"
+    },
+     "autoload": {
+        "classmap": [
+            "models"
+        ]
+    }
+}
+{% endhighlight %}
+	<p>Once we've added this we need to run the following composer command so that autoload.php is rebuilt to include this path.</p>
+{% highlight bash %}
+composer update
+{% endhighlight %}
+	<p>Now we can't start getting a setting some data to/from our database so we can make the following changes to our index.php file</p>
+
+{% highlight php %}
+
+<?php
+...
+
+use Soup\Soup as Soup;
+
+...
+
+$app->get('/', function() use ($app) {
+	$soups = Soup::all();
+	$app->render("index.html", array('hello' => 'Hello World', 'soups' => $soups));
+});
+
+$app->get('/addsoup', function() use ($app) {
+	$soup1 = Soup::create(array('name' => 'Tomato', 'temperature' => 'hot'));
+	$soup2 = Soup::create(array('name' => 'Vichyssoise', 'temperature' => 'cold'));
+	$app->response->redirect('/');
+});
+
+...
+?>
+{% endhighlight %}
+	<p>As you can see above we've changed our root URL method to select all the Soup rows from the DB and send them to our view template. Also for convenience we've added a /addsoup URL which will setup a few test rows for us to display. If everything works a call to http://localhost:8090/addsoup will add our two soups to the DB and then return us to the home page where they will be displayed. As you can see when we create the Soup rows we pass an array for the data to insert. We can do this becuase we defined the <code>$fillable</code> variable in our model object above.</p>
+
+	<h2>Adding Bootstrap</h2>
+	<p>So now to make it look good using bootstrap. All we need to do here is add all the latest bootstrap CSS and JS to our public folders and make some changes to the base.html template to make sure they are included in our HTML. Then simply add the relevant bootstrap CSS to our HTML.</p>
+
+{% highlight html %}
+<head>
+	...
+	<link rel="stylesheet" href="/css/bootstrap.min.css">
+	<link rel="stylesheet" href="/css/main.css">
+	
+   	<!--[if IE]>
+		<link rel="stylesheet" type="text/css" href="/css/ie.css" />
+	<![endif]-->
+
+	<script src="/js/jquery-1.11.1.min.js"></script>
+	<script src="/js/bootstrap.min.js"></script> 
+	<script src="/js/respond.min.js"></script>   
+	<script src="/js/global.js"></script> 
+	...
+</head>
+{% endhighlight %}
+	<p>For a complete example you can grab the <a href="https://github.com/Annalytics/OpenSourceSoup">source from GitHub here</a>.</p>
+
+	<h2>Summary</h2>
+	<p>For small, simple, dynamic websites this approach is fine and really fast to implement. In theory there's no reason why though this approach couldn't also be used for larger sites. As it's built using Slim which is supported by Google App Engine you could quickly set this up to run on a scalable Google Cloud setup which would be a very cost effective way of serving this kind of site. The addition of Illuminate means you can interact reliably with a traditional MySQL DB, which may not be trendy but will certainly be reliable and suitable for most data storage needs, again you could couple with a cloud MySQL instance. Having the ORM from Illuminate/Eloquent means your PHP code will be readable and easily maintainable, in theory of course moving to some other data store could be as simplae as changing the connection properties. Of course if this template was to be used in a larger project I'd recommend breaking up the index.php into smaller files and including them so that they are easier to maintain. Also other improvements can be made such as making use of the Slim environment setting to use different setups for development and production deployments.</p>
+	<h3>References</h3>
+	<ul>
+		<li>Composer - <a href="https://getcomposer.org/" target="_blank">https://getcomposer.org/</a></li>
+		<li>Slim - <a href="http://www.slimframework.com/" target="_blank">http://www.slimframework.com/</a></li>
+		<li>Illuminate Database - <a href="https://github.com/illuminate/database" target="_blank">https://github.com/illuminate/database</a></li>
+		<li>Twig - <a href="http://twig.sensiolabs.org/" target="_blank">http://twig.sensiolabs.org/</a></li>
+		<li>Bootstrap - <a href="http://getbootstrap.com/" target="_blank">http://getbootstrap.com/</a></li>
+
+	</ul>
+	<p><a href="https://github.com/Annalytics/OpenSourceSoup">You can get the full source of this example on GitHub here.</a></p>
+</div>
+</section>

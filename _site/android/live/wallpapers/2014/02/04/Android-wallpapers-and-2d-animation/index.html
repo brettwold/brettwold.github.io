@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Android Live Wallpapers 2D Animation</title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="Pragmatic coding">
+    <link rel="canonical" href="http://annalytics.co.uk/android/live/wallpapers/2014/02/04/Android-wallpapers-and-2d-animation/">
+
+
+	<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+	<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap-theme.min.css">
+    <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Oxygen:400,700,300" type="text/css">
+    <link rel="stylesheet" href="/css/main.css">
+
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+	<script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+</head>
+
+
+    <body>
+    <div class="container">
+	    <div class="navbar navbar-default" role="navigation">
+  <div class="container-fluid">
+    <div class="navbar-header">
+      <button class="navbar-toggle" type="button" data-toggle="collapse" data-target=".bs-navbar-collapse">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a href="/" class="navbar-brand">Annalytics</a>
+    </div>
+    <div class="collapse navbar-collapse bs-navbar-collapse">
+      <ul class="nav navbar-nav">
+        
+        
+        <li>
+          <a class="page-link" href="/about/">About</a>
+        </li>
+        
+        
+        
+        
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        
+      </ul>
+    </div>
+  </div>
+</div>
+
+	    <div class="page-content">
+	      <header class="post-header jumbotron">
+    <h1>Android Live Wallpapers 2D Animation</h1>
+    <h2>Part 1 - The Basics</h2>
+
+    <p class="meta">Feb 4, 2014 • Brett Cherrington</p>
+</header>
+
+<div class="post">
+  <article class="post-content">
+  		<section class="blog-intro">
+<div class="col-md-8">
+	<p>In this post I'm going to describe how to create a simple live wallpaper for Android. At the end you should be able to create a simple live wallpaper app and be ready to draw some graphics onto a standard android <code>Canvas</code>. The tutorial assumes some basic knowledge of android applications and assumes the reader is confident with Java. This post also assume you're also familiar with what a Live wallpaper is and how to at least install and use one on your Android device.</p>
+	<p>An important consideration when developing a live wallpaper of any kind for Android is to realise that you only have limited access to the resources of the handset. A wallpaper is by definition designed to run in the background and therefore the device will only provide limited CPU cycles to your wallpaper while the device performs its primary functions. So if you intend to implement something that requires a very high standard of graphics or will require a high framerate then the method described here is probably not the way to do it. For higher framerates or smoother motion you're going to have to look into OpenGL and even then the resources provided by the device will be limited. Also remember that nobody wants a live wallpaper that is too distracting or sucks the life out of the battery due to heavy processing load.</p>
+	<p>Having said that it is possible to create some really good effects using the standard android <code>Canvas</code> along with some simple 2D animation techniques to end up with a good looking result that doesn't kill the device and is not too distracting for the user.</p>
+</div>
+<div class="col-md-4">
+	<ul class="nav nav-pills nav-stacked">
+		
+			<li>          
+				<a class="post-link" href="/android/live/wallpapers/2014/02/15/Android-wallpapers-and-2d-animation-part-2/">Android Live Wallpapers 2D Animation: Part 2 - Drawing to the Canvas</a>
+			</li>
+		
+			<li>          
+				<a class="post-link" href="/android/live/wallpapers/2014/02/04/Android-wallpapers-and-2d-animation/">Android Live Wallpapers 2D Animation: Part 1 - The Basics</a>
+			</li>
+		
+	</ul>
+</div>
+</section>
+
+<div class="col-md-12">
+	<h2>Getting Started</h2>
+	<p>So first off lets create a stardard Android application (in Eclipse). At this point nothing special is required so just choose the standard options provided for a simple application, choose to go ahead an have your IDE create a default Activity we'll use it later to refine the wallpaper.</p>
+	<p>The first thing we'll create is a <code>android.service.wallpaper.WallpaperService</code> class. This is the main service that will run in the background to display the wallpaper. Within the class we'll define an Engine class that gets created when Android starts up your wallpaper.
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">class</span> <span class="nc">LiveWallpaper</span> <span class="kd">extends</span> <span class="n">WallpaperService</span>
+<span class="o">{</span>
+	<span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">String</span> <span class="n">LOG_TAG</span> <span class="o">=</span> <span class="n">LiveWallpaper</span><span class="o">.</span><span class="na">class</span><span class="o">.</span><span class="na">getSimpleName</span><span class="o">();</span>
+			
+	<span class="kd">public</span> <span class="nf">LiveWallpaper</span><span class="o">()</span>
+	<span class="o">{</span>
+	<span class="o">}</span>
+	
+	<span class="nd">@Override</span>
+	<span class="kd">public</span> <span class="n">Engine</span> <span class="nf">onCreateEngine</span><span class="o">()</span>
+	<span class="o">{</span>
+		<span class="k">return</span> <span class="k">new</span> <span class="nf">WallpaperEngine</span><span class="o">();</span>
+	<span class="o">}</span>
+
+	<span class="kd">private</span> <span class="kt">boolean</span> <span class="n">mVisible</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+	<span class="kd">private</span> <span class="kt">boolean</span> <span class="n">mRunning</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+	<span class="kd">private</span> <span class="kt">boolean</span> <span class="n">mRestart</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+	<span class="kd">private</span> <span class="kt">long</span> <span class="n">mLastDrawTime</span><span class="o">;</span>
+
+	<span class="kd">public</span> <span class="kd">class</span> <span class="nc">WallpaperEngine</span> <span class="kd">extends</span> <span class="n">Engine</span>
+	<span class="o">{</span>
+
+		<span class="c1">//... Main wallpaper functional code goes in here</span>
+		<span class="kd">public</span> <span class="nf">WallpaperEngine</span><span class="o">()</span>
+		<span class="o">{</span>
+		<span class="o">}</span>		
+		
+		<span class="nd">@Override</span>
+		<span class="kd">public</span> <span class="kt">void</span> <span class="nf">onCreate</span><span class="o">(</span><span class="n">SurfaceHolder</span> <span class="n">surfaceHolder</span><span class="o">)</span>
+		<span class="o">{</span>
+			<span class="n">setTouchEventsEnabled</span><span class="o">(</span><span class="kc">true</span><span class="o">);</span>
+			<span class="kd">super</span><span class="o">.</span><span class="na">onCreate</span><span class="o">(</span><span class="n">surfaceHolder</span><span class="o">);</span>
+		<span class="o">}</span>
+
+		<span class="nd">@Override</span>
+		<span class="kd">public</span> <span class="kt">void</span> <span class="nf">onVisibilityChanged</span><span class="o">(</span><span class="kt">boolean</span> <span class="n">visible</span><span class="o">)</span>
+		<span class="o">{</span>
+			<span class="n">mVisible</span> <span class="o">=</span> <span class="n">visible</span><span class="o">;</span>
+		<span class="o">}</span>
+
+		<span class="nd">@Override</span>
+		<span class="kd">public</span> <span class="kt">void</span> <span class="nf">onSurfaceDestroyed</span><span class="o">(</span><span class="n">SurfaceHolder</span> <span class="n">holder</span><span class="o">)</span>
+		<span class="o">{</span>
+			<span class="kd">super</span><span class="o">.</span><span class="na">onSurfaceDestroyed</span><span class="o">(</span><span class="n">holder</span><span class="o">);</span>
+		<span class="o">}</span>
+	
+		<span class="nd">@Override</span>
+		<span class="kd">public</span> <span class="kt">void</span> <span class="nf">onSurfaceChanged</span><span class="o">(</span><span class="n">SurfaceHolder</span> <span class="n">holder</span><span class="o">,</span> <span class="kt">int</span> <span class="n">format</span><span class="o">,</span> <span class="kt">int</span> <span class="n">width</span><span class="o">,</span> <span class="kt">int</span> <span class="n">height</span><span class="o">)</span>
+		<span class="o">{</span>
+			<span class="kd">super</span><span class="o">.</span><span class="na">onSurfaceChanged</span><span class="o">(</span><span class="n">holder</span><span class="o">,</span> <span class="n">format</span><span class="o">,</span> <span class="n">width</span><span class="o">,</span> <span class="n">height</span><span class="o">);</span>
+		<span class="o">}</span>
+	
+		<span class="nd">@Override</span>
+		<span class="kd">public</span> <span class="kt">void</span> <span class="nf">onOffsetsChanged</span><span class="o">(</span><span class="kt">float</span> <span class="n">xOffset</span><span class="o">,</span> <span class="kt">float</span> <span class="n">yOffset</span><span class="o">,</span> <span class="kt">float</span> <span class="n">xOffsetStep</span><span class="o">,</span> <span class="kt">float</span> <span class="n">yOffsetStep</span><span class="o">,</span> <span class="kt">int</span> <span class="n">xPixelOffset</span><span class="o">,</span> <span class="kt">int</span> <span class="n">yPixelOffset</span><span class="o">)</span>
+		<span class="o">{</span>			
+			<span class="kd">super</span><span class="o">.</span><span class="na">onOffsetsChanged</span><span class="o">(</span><span class="n">xOffset</span><span class="o">,</span> <span class="n">yOffset</span><span class="o">,</span> <span class="n">xOffsetStep</span><span class="o">,</span> <span class="n">yOffsetStep</span><span class="o">,</span> <span class="n">xPixelOffset</span><span class="o">,</span> <span class="n">yPixelOffset</span><span class="o">);</span>
+		<span class="o">}</span>
+		
+		<span class="nd">@Override</span>
+		<span class="kd">public</span> <span class="kt">void</span> <span class="nf">onTouchEvent</span><span class="o">(</span><span class="n">MotionEvent</span> <span class="n">event</span><span class="o">)</span>
+		<span class="o">{</span>
+		<span class="o">}</span>
+	<span class="o">}</span>
+<span class="o">}</span></code></pre></div>
+<p>As you can see we've overridden some of the methods in the Engine class, most of which are hopefully obvious as to what the do for details see the <a href="http://developer.android.com/reference/android/service/wallpaper/WallpaperService.Engine.html">SDK docs here</a>. Notice that in here we have also enabled touch events in the onCreate method, this means that when the user touches anywhere on the screen and it is not intercepted by views above the wallpaper, the touch events will be passed through. This means you can use them within your app to respond to user actions.</p>
+<div class="panel panel-warning">
+  <div class="panel-heading">
+  	<div class="panel-title">WARNING</div>
+  </div>
+  <div class="panel-body">
+  	The <code>onOffsetsChanged</code> method is not supported well by all Android devices. Some manufacturers of handset don't seem to call this method at all so relying on it will mean you are restricting the use of your wallpaper to the devices that do call this method correctly. Also some launchers will rotate through a fixed number of home pages and stop, others will continue to rotate through in a carousel. If you are intending to perform some animations while the user is swiping through home pages it is better to implement you're own code using the events passed to the <code>onTouchEvent</code> method.
+  </div>
+ </div>
+<p>Once we have our basic wallpaper service we will now add a <code>Runnable</code> that will do the work of actually drawing the live wallpaper when required, along with a standard android <code>Handler</code> which we'll use to callback the <code>Runnable</code> at intervals we decide on. We'll place this code inside our Engine class implementation above, notice that we have referenced two new methods in here <code>draw()</code> and <code>restart()</code> which we'll implement next. The <code>Runnable</code> below is going to be called repeatedly at a rate we define by setting up a delayed post from the <code>Handler</code> object. This way we hand over the refreshing of the screen to the OS and make sure we don't overload the device by trying to take too many CPU cycle from it.</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">private</span> <span class="kd">final</span> <span class="n">Handler</span> <span class="n">mHandler</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">Handler</span><span class="o">();</span>
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">DrawRunner</span> <span class="kd">implements</span> <span class="n">Runnable</span> <span class="o">{</span>
+	
+	<span class="nd">@Override</span>
+	<span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span>
+	<span class="o">{</span>
+		<span class="k">if</span><span class="o">(</span><span class="n">mRestart</span><span class="o">)</span>
+		<span class="o">{</span>
+			<span class="n">mRestart</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+			<span class="n">restart</span><span class="o">();</span>
+		<span class="o">}</span>
+		<span class="k">else</span>
+		<span class="o">{</span>
+			<span class="n">draw</span><span class="o">();</span>
+		<span class="o">}</span>
+	<span class="o">}</span>
+
+	<span class="kd">public</span> <span class="kt">void</span> <span class="nf">setRestart</span><span class="o">(</span><span class="kt">boolean</span> <span class="n">restart</span><span class="o">)</span>
+	<span class="o">{</span>
+		<span class="n">mRestart</span> <span class="o">=</span> <span class="n">restart</span><span class="o">;</span>
+	<span class="o">}</span>
+<span class="o">};</span>
+<span class="kd">private</span> <span class="kd">final</span> <span class="n">DrawRunner</span> <span class="n">mDrawRunner</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">DrawRunner</span><span class="o">();</span></code></pre></div>
+<p>The draw method is where we'll do all the work we need to draw the actual wallpaper in the background onto the <code>Canvas</code> object. First of all we'll remove any previous callbacks that may have been setup in our handler from somewhere else. The next few lines deal with making a note of the current system time so the next time the draw method is called we have an accurate idea of how much time has past. This is important in order to ensure your animation doesn't look jerky regardless of the actual framerate; depsite all our best efforts here the actual framerate will be decided by the device, its capabilities and what other processes it is currently handling.</p>
+<p>Next we use the <code>getSurfaceHolder()</code> method to get a reference to the actual <code>SurfaceHolder</code> that contains and manages the <code>Canvas</code> object. Once we have the <code>SurfaceHolder</code> we can then lock the contained <code>Canvas</code> and finally do some drawing on it. I'll cover what you can do with the <code>Canvas</code> object in the next post. After we've finished drawing on the <code>Canvas</code> we unlock it to allow the holder to handle redrawing of it.</p>
+<p>Notice in the code below we have set a callback time of 10ms, you can of course adjust this to whatever you need but again you may not get the frame rate you want according to device capacity.</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">private</span> <span class="kt">void</span> <span class="nf">draw</span><span class="o">()</span>
+<span class="o">{</span>			
+	<span class="k">if</span><span class="o">(</span><span class="n">mRunning</span><span class="o">)</span>
+	<span class="o">{</span>				
+		<span class="n">mHandler</span><span class="o">.</span><span class="na">removeCallbacks</span><span class="o">(</span><span class="n">mDrawRunner</span><span class="o">);</span>			
+
+		<span class="kt">long</span> <span class="n">drawtime</span> <span class="o">=</span> <span class="n">System</span><span class="o">.</span><span class="na">currentTimeMillis</span><span class="o">();</span>
+		<span class="kt">long</span> <span class="n">delta</span> <span class="o">=</span> <span class="n">drawtime</span> <span class="o">-</span> <span class="n">mLastDrawTime</span><span class="o">;</span>
+		<span class="n">mLastDrawTime</span> <span class="o">=</span> <span class="n">drawtime</span><span class="o">;</span>
+		<span class="kt">long</span> <span class="n">delay</span> <span class="o">=</span> <span class="mi">10</span><span class="o">;</span>
+		
+		<span class="n">SurfaceHolder</span> <span class="n">holder</span> <span class="o">=</span> <span class="n">getSurfaceHolder</span><span class="o">();</span>					
+		
+		<span class="n">Canvas</span> <span class="n">canvas</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+		<span class="k">try</span>
+		<span class="o">{</span>
+			<span class="n">canvas</span> <span class="o">=</span> <span class="n">holder</span><span class="o">.</span><span class="na">lockCanvas</span><span class="o">();</span>
+			<span class="k">if</span> <span class="o">(</span><span class="n">canvas</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span>
+			<span class="o">{</span>		
+				<span class="c1">// main draw loop code will go here...</span>
+									
+			<span class="o">}</span>
+		<span class="o">}</span>
+		<span class="k">finally</span>
+		<span class="o">{</span>
+			<span class="k">if</span> <span class="o">(</span><span class="n">canvas</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span>
+			<span class="o">{</span>
+				<span class="n">holder</span><span class="o">.</span><span class="na">unlockCanvasAndPost</span><span class="o">(</span><span class="n">canvas</span><span class="o">);</span>
+			<span class="o">}</span>
+		<span class="o">}</span>
+
+		<span class="k">if</span> <span class="o">(</span><span class="n">mVisible</span><span class="o">)</span>
+		<span class="o">{</span>									
+			<span class="n">mHandler</span><span class="o">.</span><span class="na">postDelayed</span><span class="o">(</span><span class="n">mDrawRunner</span><span class="o">,</span> <span class="n">delay</span><span class="o">);</span>		
+		<span class="o">}</span>
+	<span class="o">}</span>
+<span class="o">}</span></code></pre></div>
+<p>The restart method is going to be called whenever the device is turned on or unlocked. This method can be used to do any setup your wallpaper may need before it starts animating again. In our case we are just going to restart it by firing off a post to the handler we defined above. 
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">private</span> <span class="kt">void</span> <span class="nf">restart</span><span class="o">()</span>
+<span class="o">{</span>
+	<span class="n">mRunning</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+	<span class="n">mHandler</span><span class="o">.</span><span class="na">post</span><span class="o">(</span><span class="n">mDrawRunner</span><span class="o">);</span>
+<span class="o">}</span></code></pre></div>
+<p>It's important to make sure your wallpaper stops running when the device is locked, this will ensure that the wallpaper doesn't take up battery power while the device isn't being used. Also when the wallpaper is completely covered by another application there's no point in running the animation in the background as it'll just take up system resources. The code below shows us the changes we need to add to the the Engine to ensure the animation is stopped at these times, this is a simple matter of removing any callbacks on our handler and setting the running flag to false. We also register a new BroadcastReciever to listen for the ACTION_USER_PRESENT action event. This action will be fired when there is a user present using the device, this indicates that the device has been unlocked.</p>
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">private</span> <span class="kd">final</span> <span class="n">BroadcastReceiver</span> <span class="n">mReceiver</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">BroadcastReceiver</span><span class="o">()</span> <span class="o">{</span>
+	<span class="nd">@Override</span>
+	<span class="kd">public</span> <span class="kt">void</span> <span class="nf">onReceive</span><span class="o">(</span><span class="n">Context</span> <span class="n">context</span><span class="o">,</span> <span class="n">Intent</span> <span class="n">intent</span><span class="o">)</span> <span class="o">{</span>
+		<span class="k">if</span> <span class="o">(</span><span class="n">intent</span><span class="o">.</span><span class="na">getAction</span><span class="o">().</span><span class="na">equals</span><span class="o">(</span><span class="n">Intent</span><span class="o">.</span><span class="na">ACTION_USER_PRESENT</span><span class="o">))</span> <span class="o">{</span>
+			<span class="n">restart</span><span class="o">();</span>
+		<span class="o">}</span>
+	<span class="o">}</span>
+<span class="o">};</span>
+
+<span class="nd">@Override</span>
+<span class="kd">public</span> <span class="kt">void</span> <span class="nf">onVisibilityChanged</span><span class="o">(</span><span class="kt">boolean</span> <span class="n">visible</span><span class="o">)</span>
+<span class="o">{</span>
+	<span class="n">mVisible</span> <span class="o">=</span> <span class="n">visible</span><span class="o">;</span>
+	<span class="k">if</span> <span class="o">(</span><span class="n">visible</span><span class="o">)</span>
+	<span class="o">{</span>	
+		<span class="n">registerReceiver</span><span class="o">(</span><span class="n">mReceiver</span><span class="o">,</span> <span class="k">new</span> <span class="nf">IntentFilter</span><span class="o">(</span><span class="n">Intent</span><span class="o">.</span><span class="na">ACTION_USER_PRESENT</span><span class="o">));</span>
+		<span class="n">restart</span><span class="o">();</span>
+	<span class="o">}</span>
+	<span class="k">else</span>
+	<span class="o">{</span>
+		<span class="n">mRunning</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+		<span class="n">mHandler</span><span class="o">.</span><span class="na">removeCallbacks</span><span class="o">(</span><span class="n">mDrawRunner</span><span class="o">);</span>
+		<span class="k">try</span>
+		<span class="o">{</span>
+			<span class="n">unregisterReceiver</span><span class="o">(</span><span class="n">mReceiver</span><span class="o">);</span>
+		<span class="o">}</span>
+		<span class="k">catch</span><span class="o">(</span><span class="n">IllegalArgumentException</span> <span class="n">e</span><span class="o">)</span>
+		<span class="o">{</span>
+			<span class="c1">// .. carry on</span>
+		<span class="o">}</span>
+	<span class="o">}</span>
+<span class="o">}</span>
+
+<span class="nd">@Override</span>
+<span class="kd">public</span> <span class="kt">void</span> <span class="nf">onSurfaceDestroyed</span><span class="o">(</span><span class="n">SurfaceHolder</span> <span class="n">holder</span><span class="o">)</span>
+<span class="o">{</span>
+	<span class="kd">super</span><span class="o">.</span><span class="na">onSurfaceDestroyed</span><span class="o">(</span><span class="n">holder</span><span class="o">);</span>
+
+	<span class="n">mVisible</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+	<span class="n">mHandler</span><span class="o">.</span><span class="na">removeCallbacks</span><span class="o">(</span><span class="n">mDrawRunner</span><span class="o">);</span>
+<span class="o">}</span></code></pre></div>
+<h3>Manifest</h3>
+<p>Before we can run our wallpaper we are also going to need to add some permissions and details of the new wallpaper service to the manifest. Notice within the new service section there's a reference to another xml file which contains some more definition of our wallpaper.</p>
+<div class="highlight"><pre><code class="language-xml" data-lang="xml"><span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;</span>
+<span class="nt">&lt;manifest</span> <span class="na">xmlns:android=</span><span class="s">&quot;http://schemas.android.com/apk/res/android&quot;</span>
+    <span class="na">package=</span><span class="s">&quot;com.annalytics.livewallpapertutorial&quot;</span>
+    <span class="na">android:versionCode=</span><span class="s">&quot;1&quot;</span>
+    <span class="na">android:versionName=</span><span class="s">&quot;1.0&quot;</span> <span class="nt">&gt;</span>
+
+    <span class="nt">&lt;uses-sdk</span> <span class="na">android:minSdkVersion=</span><span class="s">&quot;8&quot;</span> <span class="na">android:targetSdkVersion=</span><span class="s">&quot;18&quot;</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;uses-feature</span> <span class="na">android:name=</span><span class="s">&quot;android.software.live_wallpaper&quot;</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;permission</span> <span class="na">android:name=</span><span class="s">&quot;android.permission.SET_WALLPAPER&quot;</span><span class="nt">/&gt;</span>    
+
+    <span class="nt">&lt;application</span>
+        <span class="na">android:allowBackup=</span><span class="s">&quot;true&quot;</span>
+        <span class="na">android:icon=</span><span class="s">&quot;@drawable/ic_launcher&quot;</span>
+        <span class="na">android:label=</span><span class="s">&quot;@string/app_name&quot;</span>
+        <span class="na">android:theme=</span><span class="s">&quot;@style/AppTheme&quot;</span> <span class="nt">&gt;</span>
+        <span class="nt">&lt;activity</span> <span class="na">android:name=</span><span class="s">&quot;com.annalytics.livewallpapertutorial.MainActivity&quot;</span> 
+        	<span class="na">android:label=</span><span class="s">&quot;@string/app_name&quot;</span><span class="nt">&gt;</span>
+            <span class="nt">&lt;intent-filter&gt;</span>
+                <span class="nt">&lt;action</span> <span class="na">android:name=</span><span class="s">&quot;android.intent.action.MAIN&quot;</span> <span class="nt">/&gt;</span>
+                <span class="nt">&lt;category</span> <span class="na">android:name=</span><span class="s">&quot;android.intent.category.LAUNCHER&quot;</span> <span class="nt">/&gt;</span>
+            <span class="nt">&lt;/intent-filter&gt;</span>
+        <span class="nt">&lt;/activity&gt;</span>
+        
+        <span class="nt">&lt;service</span> <span class="na">android:name=</span><span class="s">&quot;com.annalytics.livewallpapertutorial.LiveWallpaper&quot;</span> 
+        	<span class="na">android:enabled=</span><span class="s">&quot;true&quot;</span> 
+        	<span class="na">android:permission=</span><span class="s">&quot;android.permission.BIND_WALLPAPER&quot;</span> 
+        	<span class="na">android:label=</span><span class="s">&quot;@string/wallpaper_name&quot;</span><span class="nt">&gt;</span>
+			<span class="nt">&lt;intent-filter&gt;</span>
+				<span class="nt">&lt;action</span> <span class="na">android:name=</span><span class="s">&quot;android.service.wallpaper.WallpaperService&quot;</span><span class="nt">&gt;&lt;/action&gt;</span>
+			<span class="nt">&lt;/intent-filter&gt;</span>
+			<span class="nt">&lt;meta-data</span> <span class="na">android:name=</span><span class="s">&quot;android.service.wallpaper&quot;</span> <span class="na">android:resource=</span><span class="s">&quot;@xml/wallpaper&quot;</span><span class="nt">&gt;&lt;/meta-data&gt;</span>
+		<span class="nt">&lt;/service&gt;</span>
+    <span class="nt">&lt;/application&gt;</span>
+
+<span class="nt">&lt;/manifest&gt;</span></code></pre></div>
+<p>The wallpaper XML file defined above simply contains details about the thumbnail to use for the wallpaper when selected by the user along with the longer description displayed.</p>
+<div class="highlight"><pre><code class="language-xml" data-lang="xml"><span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;</span>
+<span class="nt">&lt;wallpaper</span> 
+	<span class="na">xmlns:android=</span><span class="s">&quot;http://schemas.android.com/apk/res/android&quot;</span>
+	<span class="na">android:thumbnail=</span><span class="s">&quot;@drawable/ic_launcher&quot;</span>	
+	<span class="na">android:description=</span><span class="s">&quot;@string/wallpaper_description&quot;</span>  <span class="nt">/&gt;</span></code></pre></div>
+<p>We now have everything we need to run a live wallpaper so in theory you could go ahead and run it from here. However, obviously as of yet we haven't actually drawn anything to the screen so you'll just get a blank background. In the next post I'll show you how to actually draw to the <code>Canvas</code> along with so tips and tricks with regards to loading and moving Bitmap images.</p>
+
+<p><a href="/android/live/wallpapers/2014/02/15/Android-wallpapers-and-2d-animation-part-2/">Part 2 - Drawing to the Canvas</a></p>
+
+</div>
+  </article>
+</div>
+	    </div>
+	</div>
+	    
+	<div class="footer">
+  <div class="container site-footer">
+    <div class="col-md-5">
+      <ul>
+        <li>Annalytics Ltd</li>
+        <li><a href="mailto:brett@annalytics.co.uk">brett@annalytics.co.uk</a></li>
+        <li><a href="https://www.linkedin.com/pub/brett-cherrington/0/6a/862">LinkedIn</a></li>
+      </ul>
+    </div>
+
+    <div class="col-md-2">
+      <ul>
+        <li>
+          <a href="https://github.com/Annalytics">
+            <span class="icon github">
+              <svg version="1.1" class="github-icon-svg" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+                 viewBox="0 0 16 16" enable-background="new 0 0 16 16" xml:space="preserve">
+                <path fill-rule="evenodd" clip-rule="evenodd" fill="#C2C2C2" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761
+                c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32
+                c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472
+                c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037
+                C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65
+                c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261
+                c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082
+                c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129
+                c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/>
+              </svg>
+            </span>
+            <span class="username">GitHub</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <div class="col-md-5" style="text-align: right; ">
+      <p class="text">Pragmatic coding</p>
+    </div>
+  </div>
+</div>
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-53502021-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
+    </body>
+</html>

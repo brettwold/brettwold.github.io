@@ -1,0 +1,13 @@
+# Site settings
+title: Annalytics
+company: Annalytics Ltd
+email: brett@annalytics.co.uk
+description: "Pragmatic coding"
+baseurl: ""
+url: "http://annalytics.co.uk"
+username: Annalytics
+
+# Build settings
+markdown: kramdown
+permalink: pretty
+highligher: pygments

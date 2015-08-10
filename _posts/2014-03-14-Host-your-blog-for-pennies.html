@@ -1,0 +1,74 @@
+---
+layout: post
+title:  "Host your blog for pennies"
+subtitle: "Blog hosting with cloud files"
+date:   2014-03-14
+categories: cloud
+tags: cloud ruby jekyll AWS
+author: Brett Cherrington
+---
+
+<section class="blog-intro">
+	<div class="col-md-12">
+		<p>This post covers the basics of how you can host your blog on the cloud for no more than a few pence a month. There are many different ways of doing this that vary depending on your choice of cloud vendor and your choice of local software. Regardless of whatever solutions you choose the basic principles we use here will be the same. We will generate a website locally and then arrange for this to be synchronised to the cloud hosting service online. The files generated locally will consist of nothing more than HTML, CSS and Javascript and therefore we don't need to rely on any server side technology to host our site. As the whole site will be built and managed for us locally, we only need to ensure it is updated to the cloud service when changes are made. Also, as the site will be hosted for us on a cloud based CDN we don't need to worry about availability, performance, security or reliability of any traditional web server/hosting. For this article we will be using <a href="http://aws.amazon.com" target="_blank">Amazon AWS</a> to do the hosting for us and locally we will be using <a href="http://jekyllrb.com/" target="_blank">Jekyll</a> to create and manage our website/blog.</p>
+		<h2>Local development setup</h2>
+		<p>The first step to getting started with this process is to develop your website. As mentioned above we're going to be Jekyll which is a Ruby based application. There are very good docs on setting it up on there website so I'm not going to repeat them here. If you are running Linux and already have (the right version) of Ruby installed then you should be able to get going from simply running the following commands.</p>
+{% highlight bash %}
+$ gem install jekyll
+$ jekyll new myblog
+$ cd myblog
+~/myblog $ jekyll serve
+# => Now browse to http://localhost:4000
+{% endhighlight %}
+		<p>If you are running windows then the process is a little more complicated but there is a great guide <a href="http://jekyll-windows.juthilo.com/">provided here</a>.</p>
+		<p>The main thing to get right is to ensure you are running thr right version of Ruby to go with your Jekyll version. At the time of writing this I had sucess running Jekyl 2.0.3 on Ruby 1.9.2. If you find any isseus running Jekyll then you probably need to make your Ruby version match. If you are running Linux and having trouble getting the right version of Ruby running you might want to take a look at the linux command <code>update-alternatives</code>. The following example will help you ensure you have the correct version of Ruby running even when you have multiple version installed.</p>
+{% highlight bash %}
+$ sudo update-alternatives --config ruby
+{% endhighlight %}
+		<p>Once you have Jekyll up and running you should be able to browse to your website and see the basic starter application. You find that Jekyll has automatically created a folder structure and example website for you with a couple of example blog posts. One of the benefits of Jekyll is you can create layouts and templates that can be re-used throughout your site. This means you don't need to copy and paste the same boilerplate code in order to maintain your "static" website. You'll see that Jekyll builds your site for you and places the output into the <code>_site</code> folder. You will also find a <code>_post</code> folder which will contain all your blog posts. These can be labelled with tags, categories, publication date or anything else you choose to add to them as per normal blog articles using what they describe in the documentation as "front-matter". This is a little snippet of text that goes at the top of every file to describe it's attributes. Jekyll is a very flexible application that can help you build a website very quickly, I recommend you check out the docs to find out more.</p>
+
+		<h2>Cloud files setup</h2>
+		<p>Once you have finished working on your site you can set up your cloud service and make it live. As mentioned earlier we are going to use Amazon AWS to do this but you could choose almost any cloud vendor to use and the process would be very similar. If you don't already have an AWS account the first thing to do is <a href="http://aws.amazon.com" target="_blank">signup and create one</a>. This is totally free and instant to setup but you will need to provide credit card details so that you can use the AWS services fully.</p>
+		<p>Once you've logged in you'll be confronted with all the AWS services, head over to S3 which is Amazon's cloud storage service. Here you should see the S3 management console where we will need to create a new "bucket". A bucket is pretty much the same as an online folder but S3 allows us to set up fine grained access control and permissions for the folder using policies. So first of all lets create a bucket for us to use for our website. You should see a form similar to the one below.</p>
+		<img src="/images/s3_1.png" alt="Create a bucket form" class="img-responsive"/>
+		<p>When creating the name it's sensible to use the fully qualified domain name you are going to use for your website. So if you plan to redirect everyone to the www. sub-domain then be sure to use that in the bucket name. The reason for this will become clear later when we setup multiple buckets for a website to ensure correct redirection of the domain.</p>
+		<p>After you have created your bucket you now need to configure it to behave as a static web folder. If you click on the properties tab you should be see something similar to the screen below. In here we will need to setup the properties in the "Static Website Hosting" section and add a bucket policy in the "Permissions" section.</p>
+		<img src="/images/s3_2.png" alt="Bucket properties screen" class="img-responsive"/>
+		<p>The static website hosting section should have "Enable website hosting" selected as in the image above and you can go ahead and define two files for the index page and error page. Now we need to configure the bucket polict so that it is publically accessible. To do this we need to add the following policy. To find out more about bucket polices and some example of how to use them you can read some <a href="http://docs.aws.amazon.com/AmazonS3/latest/dev/example-bucket-policies.html" target="_blank">examples on Amazon here</a>.
+{% highlight json %}
+{
+	"Version": "2012-10-17",
+	"Statement": [
+		{
+			"Sid": "AddPerm",
+			"Effect": "Allow",
+			"Principal": "*",
+			"Action": "s3:GetObject",
+			"Resource": "arn:aws:s3:::www.myamazingwebsite.com/*"
+		}
+	]
+}
+{% endhighlight %}
+		</p>
+		<p>To add the policy above click on the "Edit bucket policy" button and opcy and paste the above JSON code into the textarea.</p>
+		<p>The you can go ahead and save everything by clicking on the save button. You bucket will now be live and when it contains some website files you will be able to view it at the endpoint given in the Static Website Hosting section. At this point you can manually go ahead and upload your files from the <code>_site</code> folder and confirm to yourself it works by visiting the endpoint.In our example above the endpoint would be <code>www.myamazingwebsite.com.s3-website-eu-west-1.amazonaws.com</code>.</p>
+		<p>Now that we have our website and it's hosting setup we can go ahead and setup the DNS to allow visitors to our domain to view the website. This can be done one of two ways; by either directly adding the endpoint above into your current registrar's DNS control panel or by setting up Amazon's Route 53 to manage the DNS settings for your domain.<p>
+		<h3>DNS setup using you own registrar</h3>
+		<p>To configure your own registar to point to your new AWS S3 bucket all you have to do is create a CNAME entry against the domain and set it to the endpoint of the bucket given above. This is usually performed within the control panel of the domain registrar. Once you have done this and waited for upto 48hrs for the DNS settings to propagate you should be able to see your website on your own domain. Be sure that when you set the CNAME up you create it for the www record and there are no existing A records setup on the domain.</p>
+		<h3>DNS setup using Route 53</h3>
+		<p>If we choose to use the Route 53 service, this allows you to have more control over how your domain is setup. Essentially Route 53 replaces your existing domain registrar's nameservers with it's own so your domain can be setup and managed within it. This allows you to setup and create subdomains that point to other S3 buckets. One advantage of this is that you can then create a bucket for the main (naked) domain that simply redirects to your primary www sub-domain. Route 53 allows you to define record set entries for your domain that point directly to S3 buckets. The only restriction is that the bucket name must match the full domain name. This is why we chose to use www.myamazingwebsite.com as the bucket name above. We can then create an empty bucket called myamazingwebsite.com and have route 53 direct traffic to it. This new empty bucket will have the same setting as the www one above but we will choose to simply redirect all requests under the "Static Website Hosting" tab within the bucket properties. Amazon provides some useful documents on <a href="http://docs.aws.amazon.com/Route53/latest/DeveloperGuide/RoutingToS3Bucket.html" target="_blank">how to setup your domain for Route 53 here</a>.</p>
+		<h2>Synchronizing your website</h2>
+		<p>Obviously we could continue to manually copy our website to S3 everytime we make a change. However, if we want to make this simpler and more reliable we can use a tool called <a href="http://s3tools.org/s3cmd" target="_blank">s3cmd</a>. This tool provides a simple command line interface that once setup will synchronise all files from your local environment to your S3 bucket. The tool is still in beta at the moment but seems to work reliably. Before you can use the tool you will need to configure it using the cmd.
+{% highlight bash %}
+$ s3cmd --configure
+{% endhighlight %}
+		During this process	you will be asked to provide the two keys that are required to access your AWS services. You can find these under your account settings -> Security Credentials -> Access Keys. You will also be asked about encryption and use of SSL. I recommend you use both of these to keep your security credentials as secure as possible.</p>
+		<p>Once you have configured s3cmd with your account details you can then simply use it to copy your files by navigating to the <code>_site</code> folder and using the command.
+{% highlight bash %}
+$ s3cmd sync ./ s3://www.myamazingwebsite.com/
+{% endhighlight %}
+		</p>
+		<h2>Summary</h2>
+		<p>Using the process described above is a great way to cheaply host your website. Even though the content hosted is static by using Jekyll and s3cmd we have ensured that updates and change can be made efficiently and quickly. The use of a cloud based file hosting service means we no longer have to worry about maintaining a webserver and all the associated software. The website content is distributed globally and scaled across many servers so backup and performance become a thing of the past. This setup is ideal for small websites, blogs or brochureware style sites. In terms of cost it's about as low as it gets and considering the factors just mentioned it's well worth it. For instance hosting this site and several others costs approximately $0.53 a month! With most of that cost coming from the Route 53 service, without the Route 53 aspect this site cost approximately $0.02 a month to host!</p>
+	</div>
+</section>
