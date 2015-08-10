@@ -18,3 +18,4 @@ Something to watch out for though is to make sure you __don't__ check in the _si
 
 Also note that can even have the site hosted under your own domain name. Again there's a [great guide here](https://help.github.com/articles/setting-up-a-custom-domain-with-github-pages/). All you need to do is create a simple CNAME file in your repo and re-point your domain to the appropriate *username*.github.io domain within your regstrars DNS control panel.
 
+Oh, did I mention, you get source control of your website as well!!
