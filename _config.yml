@@ -5,9 +5,9 @@ email: brett@annalytics.co.uk
 description: "Pragmatic coding"
 baseurl: ""
 url: "http://annalytics.co.uk"
-username: Annalytics
+username: brettwold
 
 # Build settings
-markdown: kramdown
+markdown: redcarpet
 permalink: pretty
 highligher: pygments
