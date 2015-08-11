@@ -8,7 +8,13 @@ tags: cloud bintray gradle
 author: Brett Cherrington
 ---
 
-This blog post discusses how you can add your Android (or plain old Java) library to your own personal online repository and then use them in your own projects by referring to them as dependencies. 
+This post discusses how you can add your Android (or plain old Java) library to your own personal online software repository and then use them in your own projects as you do all other libraries. At the end you will be able to refer to your projects them as standard gralde dependencies just like you do for all other libraries. i.e.
+
+```groovy
+    dependencies {
+        compile com.brettwold:MyAwesomeLibrary:0.5
+    }    
+```
 
 There are several choices of online repository available but for this blog I chose to use [Bintray](https://bintray.com/). Bintray allows you to upload source files for a variety of distribution types such as maven, docker, rpm etc. However, the main reason for choosing Bintray in this case is that it's also the home of the main Android library distributions called jcenter. This means if we want to deploy our library from our own repository to jcenter its as simple as clicking a button.
 
