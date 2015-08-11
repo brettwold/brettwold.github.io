@@ -122,6 +122,25 @@ And that is it! Now that we have defined all of the above we can create a releas
 ./gradlew bintrayUpload
 
 ```
+> _Note:_ The example above assume you have created a standard java library not an Android 
+> library. If your project is an Android library you will need to change the `from components.java` line. See the snippet below for the maven-publish details you would use to publish 
+> an Android library (i.e. an .aar file).
+>
+
+```groovy
+
+publishing {
+    publications {
+        MyAwesomeLibrary(MavenPublication) {
+            groupId 'com.brettwold'
+            artifactId 'MyAwesomeLibrary'
+            version "${project.version}"
+            artifact "${project.buildDir}/outputs/aar/${project.name}-release.aar"
+        }
+    }
+}
+
+```
 
 If all is well this should compile and archive your library and upload it to bintray. You can check it by loggin into Bintray and navigating to your project. There are some other details you can then fill out such as description etc if you want to. 
 
