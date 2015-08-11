@@ -1,9 +1,14 @@
 
 .github-icon-svg,
+.linkedin-icon-svg,
 .twitter-icon-svg {
   display: inline-block;
   width: 24px;
   height: 24px;
   position: relative;
   top: 3px;
+}
+
+.linkedin-icon-svg {
+  background-color: #c2c2c2;
 }

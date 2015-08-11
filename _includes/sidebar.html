@@ -22,10 +22,11 @@
         {% endif %}
       {% endfor %}
 
-      <p>Libraries and tools</p>
+      <h4>Libraries and tools</h4>
       <a href="https://github.com/brettwold/Themeable">Themeable</a><br/>
       <a href="https://github.com/brettwold/Storme">Storme</a><br/>
 
+      <h4>Contact</h4>
         <a href="https://github.com/{{ site.username }}">
           <span class="icon github">
             <svg version="1.1" class="github-icon-svg" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
@@ -41,8 +42,14 @@
               c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/>
             </svg>
           </span>
-          <span class="username">GitHub</span>
-        </a>
+          <span>GitHub</span>
+        </a><br/>
+        <a href="https://www.linkedin.com/pub/brett-cherrington/0/6a/862">
+          <span class="icon linkedin">
+            <svg viewBox="0 0 512 512" class="linkedin-icon-svg" fill="#6a9fb5"><path d="M186.4 142.4c0 19-15.3 34.5-34.2 34.5 -18.9 0-34.2-15.4-34.2-34.5 0-19 15.3-34.5 34.2-34.5C171.1 107.9 186.4 123.4 186.4 142.4zM181.4 201.3h-57.8V388.1h57.8V201.3zM273.8 201.3h-55.4V388.1h55.4c0 0 0-69.3 0-98 0-26.3 12.1-41.9 35.2-41.9 21.3 0 31.5 15 31.5 41.9 0 26.9 0 98 0 98h57.5c0 0 0-68.2 0-118.3 0-50-28.3-74.2-68-74.2 -39.6 0-56.3 30.9-56.3 30.9v-25.2H273.8z"></path></svg>
+          </span>
+          <span>LinkedIn</span></a><br/>
+        <a href="mailto:{{ site.email }}">{{ site.email }}</a>
     </nav>
 
     <p>&copy; {{ site.time | date: '%Y' }}. All rights reserved.</p>
