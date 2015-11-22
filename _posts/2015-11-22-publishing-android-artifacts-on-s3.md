@@ -7,8 +7,6 @@ tags: android
 author: Brett Cherrington
 ---
 
-# Publishing Android Liraries to S3
-
 If you want to share your java and Android libraries with other colleagues in your team but don't want to make them public then you need a private artifact repository. As always there are numerous ways of doing this most commonly using something like [Artifactory](https://www.jfrog.com/open-source/) by jFrog to host you artifacts. Whilst this is usually very easy to do with these artifact repos, usually if you want to make these artifacts private then you'll need to purchase a license or host your own version.
 
 If you're just looking for a simple low cost way of sharing artifacts within your team then you can now do it really simply using S3. This post give details on how you can publish your Android libraries or java projects to S3 and then make use of them in other projects just like you do with public open source projects. Your library can be published to S3 as a maven artifact and will include the necessary POM files etc. You will need to use gradle 2.4 or above and I'll assume the user is familiar with the basic concepts of using AWS.
