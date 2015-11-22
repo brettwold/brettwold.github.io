@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Publishing Android Liraries to S3"
+title:  "Publishing Android Liraries to a Private S3 Repo"
 date:   2015-11-22
 categories: android publishing
 tags: android
