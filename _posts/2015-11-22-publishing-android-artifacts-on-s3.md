@@ -1,3 +1,12 @@
+---
+layout: post
+title:  "Publishing Android Liraries to S3"
+date:   2015-11-22
+categories: android publishing
+tags: android
+author: Brett Cherrington
+---
+
 # Publishing Android Liraries to S3
 
 If you want to share your java and Android libraries with other colleagues in your team but don't want to make them public then you need a private artifact repository. As always there are numerous ways of doing this most commonly using something like [Artifactory](https://www.jfrog.com/open-source/) by jFrog to host you artifacts. Whilst this is usually very easy to do with these artifact repos, usually if you want to make these artifacts private then you'll need to purchase a license or host your own version.
