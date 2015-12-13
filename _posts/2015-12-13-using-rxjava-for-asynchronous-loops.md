@@ -13,21 +13,20 @@ Firstly lets look at the original loop.
 
 ```java
 
-  final List<String> supportedApps = getListForSelection();
+final List<String> supportedApps = getListForSelection();
 
-  String candidate = null;
-  for(String selectedCandiate : supportedApps)
-    try {
-      selectApplication(selectedCandidate);
-      userSelectAccount();
-      candidate = selectedCandidate;
-    } catch(Exception e) {
-      // failed to select this application move onto the next
-    }
+String candidate = null;
+for(String selectedCandiate : supportedApps)
+  try {
+    selectApplication(selectedCandidate);
+    userSelectAccount();
+    candidate = selectedCandidate;
+  } catch(Exception e) {
+    // failed to select this application move onto the next
   }
-
-  // handle candidate or null!
 }
+
+// handle candidate or null!
 
 ```
 
@@ -49,24 +48,24 @@ this is to make the list of `supportedApps` an `Observable`. This is pretty stra
 forward like so.
 
 ```java
-    final List<String> supportedApps = getListForSelection();
-    final Observable<String> observableSupportedApps = Observable.from(supportedApps);
+final List<String> supportedApps = getListForSelection();
+final Observable<String> observableSupportedApps = Observable.from(supportedApps);
 ```
 
 Now that we have our candidates as a stream we can subscribe to them and perform the
 first validation method from above.
 
 ```java
-    observableSupportedApps.takeWhile(new Func1<String, Boolean>() {
-      @Override
-      public Boolean call(String candidate) {
-        try {
-          return selectApplication(candidate);
-        } catch (Exception e) {
-          return false;
-        }
-      }
-    }).subscribe(...)
+observableSupportedApps.takeWhile(new Func1<String, Boolean>() {
+  @Override
+  public Boolean call(String candidate) {
+    try {
+      return selectApplication(candidate);
+    } catch (Exception e) {
+      return false;
+    }
+  }
+}).subscribe(...)
 
 ```
 Above I am using the `takeWhile` method which will take items from the stream as long
@@ -79,38 +78,38 @@ observable which will emit when the user has selected.
 
 ```java
 
-    final PublishSubject<Integer> stop = PublishSubject.create();
+final PublishSubject<Integer> stop = PublishSubject.create();
 
-    final List<String> supportedApps = getListForSelection();
-    final Observable<String> observableSupportedApps = Observable.from(supportedApps);
+final List<String> supportedApps = getListForSelection();
+final Observable<String> observableSupportedApps = Observable.from(supportedApps);
 
-    // go through candidates until we find one that is supported by terminal and is valid
-    observableSupportedApps.takeWhile(new Func1<String, Boolean>() {
-      @Override
-      public Boolean call(String candidate) {
-        try {
-          return selectApplication(candidate);
-        } catch (Exception e) {
-          return false;
-        }
-      }
-    })
-    .takeUntil(stop)
-    .subscribe(new Action1<String>() {
-      @Override
-      public void call(String candidate) {
-        try {
-          userSelectAccount();
+// go through candidates until we find one that is supported by terminal and is valid
+observableSupportedApps.takeWhile(new Func1<String, Boolean>() {
+  @Override
+  public Boolean call(String candidate) {
+    try {
+      return selectApplication(candidate);
+    } catch (Exception e) {
+      return false;
+    }
+  }
+})
+.takeUntil(stop)
+.subscribe(new Action1<String>() {
+  @Override
+  public void call(String candidate) {
+    try {
+      userSelectAccount();
 
-          // here we have selected our application finally
-          // all is well so we want to stop
-          stop.onNext(1);
+      // here we have selected our application finally
+      // all is well so we want to stop
+      stop.onNext(1);
 
-        } catch (Exception e) {
-          resultPublishSubject.onError(e);
-        }
-      }
-    });
+    } catch (Exception e) {
+      resultPublishSubject.onError(e);
+    }
+  }
+});
 ```
 
 So here we have ensured the methods are called in order and we can use the normal
