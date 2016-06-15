@@ -12,14 +12,35 @@ If you want to automatically version your android application APK files and andr
 
 Firstly create a gradle script in the root of your project called `artifacts.gradle`
 
-<div class="gistLoad" data-id="89939fe171e8698a65ca95365a806f1" data-file="artifacts.gradle" id="gist-89939fe171e8698a65ca95365a806f1">Loading https://gist.github.com/89939fe171e8698a65ca95365a806f1....</div>
+```groovy
+android.applicationVariants.all { variant ->
+    def appName
+    if (project.hasProperty("applicationName")) {
+        appName = applicationName
+    } else {
+        appName = parent.name
+    }
 
-Then refer to this script from within your applications main build.gradle file using the following
+    variant.outputs.each { output ->
+        def newApkName
+        if (output.zipAlign) {
+            newApkName = "${appName}-${output.baseName}-${variant.versionName}.apk"
+        } else {
+            newApkName = "${appName}-${output.baseName}-${variant.versionName}-unaligned.apk"
+        }
+        output.outputFile = new File(output.outputFile.parent, newApkName)
+    }
+}
+```
+
+Then refer to this script from within your applications main build.gradle file using something like the following
 
 ```groovy
 apply from: "../artifacts.gradle"
 
-ext.applicationName="MyAwesomeApp"
+ext.applicationName="MyAwesomeApplication"
+
+version = "1.2.3"
 
 ```
 
@@ -27,7 +48,21 @@ Then call your usual build command `./gradlew assembleRelease` and you will find
 
 You can do the same thing for a library using the script below:
 
-<div class="gistLoad" data-id="89939fe171e8698a65ca95365a806f1e" data-file="artifacts.gradle" id="gist-89939fe171e8698a65ca95365a806f1e">Loading https://gist.github.com/89939fe171e8698a65ca95365a806f1e....</div>
+```groovy
+android.libraryVariants.all { variant ->
+    def appName
+    if (project.hasProperty("applicationName")) {
+        appName = applicationName
+    } else {
+        appName = parent.name
+    }
+
+    variant.outputs.each { output ->
+        def newApkName = "${appName}-${output.baseName}-${version}.aar"
+        output.outputFile = new File(output.outputFile.parent, newApkName)
+    }
+}
+```
 
 This will append the verison number to your AAR file name.
 
