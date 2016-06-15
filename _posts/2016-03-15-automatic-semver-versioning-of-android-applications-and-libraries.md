@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Automatic SemVer versioning of Android applications"
+title:  "Automatic versioning of Android application APK files"
 subtitle: ""
 date:   2016-03-15
 categories: gradle, android
