@@ -9,23 +9,28 @@ menutitle: Annalytics
   </div>
   <div>
     <h2>Who am I?</h2>
-    <p>I'm a pragmatic software developer, focused on mobile and online solutions. I've worked on and been responsible for the development of many online solutions over more than 17 years. This has included solutions for companies large and small.</p>
+    <p>I'm a pragmatic software developer, focused on mobile and online solutions.
+      I've worked on and been responsible for the development of many online solutions
+      over more than 20 years. This has included solutions for companies large and small.</p>
 
     <h2>What do I do?</h2>
-    <p>Hands on development of digital solutions for mobile phone apps and websites as well as consultancy, advice and solutions for all aspects of online software and its development.</p>
+    <p>Hands on development of digital solutions for mobile phone apps and websites
+      as well as consultancy, advice and solutions for all aspects of online software
+      and its development.</p>
 
     <h2>Contact</h2>
-    <p>I'm interested in hearing from you if you have a digital project that you need help with, feel free to use the contact details below.</p>
+    <p>I'm interested in hearing from you if you have a digital project that you need
+      help with, feel free to use the contact details below.</p>
 
   </div>
   <div class="related">
 
     <h3>Blog</h3>
-    
+
     <ul>
     {% for post in site.posts %}
       <li>
-        {{ post.date | date: "%b %-d, %Y" }} - 
+        {{ post.date | date: "%b %-d, %Y" }} -
         <a class="post-link" href="{{ post.url | prepend: site.baseurl }}">{{ post.title }}</a>
       </li>
     {% endfor %}
