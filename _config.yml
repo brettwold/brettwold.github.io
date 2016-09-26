@@ -8,6 +8,6 @@ url: "http://annalytics.co.uk"
 username: brettwold
 
 # Build settings
-markdown: redcarpet
+markdown: kramdown
 permalink: pretty
 highligher: pygments
