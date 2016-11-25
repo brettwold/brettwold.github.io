@@ -73,26 +73,41 @@ publishing {
     }
 }
 ```
-However, for an Android library this is a bit more involved as we need to create a jar file from the Android sources to publish. This is shown in the block below, as you can see we need to add a new task that firstly creates a jar file from our library and then tell our maven publisher about it.
+However, for an Android library this is a bit more involved as we need to create a jar file from the Android sources to publish. This is shown in the block below, as you can see we need to add a new task that firstly creates a jar file from our library.
+
+> NOTE: 25/Nov/2016 this has been updated for the android gradle plugin v2.2.2 and gradle v2.14.1
 
 ```groovy
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            artifact jarRelease
-        }
-    }
-}
 
 android.libraryVariants.all { variant ->
     def name = variant.buildType.name
-    if (name.equals(com.android.builder.core.BuilderConstants.DEBUG)) {
+    if (name.equals("debug")) {
         return; // Skip debug builds.
     }
-    def task = project.tasks.create "jar${name.capitalize()}", Jar
-    task.dependsOn variant.javaCompile
-    task.from variant.javaCompile.destinationDir
-    artifacts.add('archives', task);
+
+    task("jar${name.capitalize()}", type: Jar) {
+        dependsOn variant.javaCompiler
+        from variant.javaCompiler.destinationDir
+    }
+}
+
+```
+
+Then we need to tell our maven publisher about the new artifact to publish
+
+> NOTE: 25/Nov/2016 this has been updated for the android gradle plugin v2.2.2 and gradle v2.14.1
+
+```
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            version = project.version
+            artifactId = project.name
+            groupId = project.group
+            artifact("$buildDir/libs/${project.name}-${project.version}.jar")
+        }
+    }
 }
 
 ```
@@ -100,7 +115,7 @@ android.libraryVariants.all { variant ->
 Now we can publish our artifact to S3 by simply running
 
 ```
-gradlew publish
+gradlew jarRelease publish
 ```
 
 If all goes well you should see your jar file and the required maven xml files uploaded in your S3 bucket.
@@ -130,10 +145,10 @@ Now you can simply depend on your new library as you usually do like so.
 ```groovy
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    
+
     compile "com.example.myamazingproject:Magic:1.0.0"
-    
+
     ...
-    
+
     }
 ````
