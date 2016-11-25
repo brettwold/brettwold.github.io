@@ -84,11 +84,10 @@ android.libraryVariants.all { variant ->
     if (name.equals("debug")) {
         return; // Skip debug builds.
     }
-
-    task("jar${name.capitalize()}", type: Jar) {
-        dependsOn variant.javaCompiler
-        from variant.javaCompiler.destinationDir
-    }
+    def task = project.tasks.create "jar${name.capitalize()}", Jar
+    task.dependsOn variant.javaCompiler
+    task.from variant.javaCompiler.destinationDir
+    artifacts.add('archives', task);
 }
 
 ```
