@@ -23,24 +23,25 @@ the standard Http class.
 
 <script src="https://gist.github.com/brettwold/f94ec2de1355dab62619052c4b38e86e.js"></script>
 
-Diving into the code above you can see that the main `request` method of the Http
-is overridden so that a token can be added to the headers of every request sent
-by the class. The `requestWithToken` method adds a standard HTTP `Authorization`
-header item to every request. This header will contain a token that has been
+As you can see above the main `request` method of the Http class is overridden
+and an authorsation token is added to the headers of every request sent by the
+class. The `requestWithToken` method adds a standard HTTP `Authorization`
+header item to every request. The header will contain a `Bearer` token that has been
 previously obtained by the application. If no token has yet been obtained then
 by default this implementation will throw an Error, but this can be overridden
 by changing the configuration parameters passed to this interceptor on
-construction (more about that later). As you can also see the token is obtained
-by whatever `Promise<string>` the `getToken()` method returns which had to be
-provided by the concrete implemetation of this abstract base class.
+construction. The authorisation token is obtained by calling the `getToken()`
+method which returns a `Promise<string>`. The actual implementation of this method
+should be provided by the concrete implementation of this abstract class.
 
-Also as you can see all the standard HTTP method calls are overridden and make
-a call to the `intercept()` method. This method add a catch observer to catch
-any HTTP call this has a response code of 401. If a 401 is observed then a call
-is made to the `refreshToken()` method which should make an attempt to obtain a
-new token. Also the `intercept()` method takes care of storing the original HTTP
+All the standard HTTP method calls are overridden and they in turn make a call
+to the `intercept()` method where the main work is done. This method adds a
+catch observer to the standard Observer chain so that any HTTP call which returns
+a response code of 401 can be handled. If a 401 is observed then a call
+is made to the `refreshToken()` method which will in turn make an attempt to obtain a
+new token. As well as this the `intercept()` method takes care of storing the original HTTP
 request details so that once an authorisation token has been obtained the original
-call cen be sent automatically and the original subscriber to the call is completely
+HTTP call can be sent automatically and the original subscriber is completely
 unaware anything different has happened.
 
 As you can see this class is abstract so in order to use it you have to extend it
@@ -87,12 +88,12 @@ export function getHttpAuth(backend: ConnectionBackend, defaultOptions: RequestO
 })
 ```
 
-By providing a different implementation of the Http class but sticking to the
-same interface means we can now use the class as we normally would for HTTP calls.
-If the client application is currently un-authorised or the token has expired
-our HttpAuthInterceptor implementation will take care of refreshing the token and
-repeating the original call for us. So an example of calling an API URL would be
-a standard call using the normal Angular2 Http class e.g.
+Providing a different implementation of the Http class means we can now use the
+class as we normally would for HTTP calls. If the client application is currently
+unauthorised or the authorisation token has expired then our HttpAuthInterceptor
+implementation will take care of refreshing the token and repeating the original
+call for us completely transparently.Therefore an example of calling an authorised
+API URL would simply be as standard e.g.
 
 ```typescript
 return this.http.get(this.api_url)
@@ -102,10 +103,10 @@ return this.http.get(this.api_url)
 
 ## Summary
 
-This post shows how to implement an interceptor extending the standard Angular2 
-Http class, that is capable of intercepting any requests ended with 401 failures
-and automatically refreshing an authentication token.
+This post shows how to implement an HTTP interceptor in Anuglar2 that extends
+the standard Angular2 Http class. It has shown how it can intercept any requests
+that result in 401 failures and automatically refresh an authentication token.
 
-This examples above are taken from a real Ionic2 application connecting to a
+The examples above are taken from a real Ionic2 application connecting to a
 bespoke API but this class should be capable of being used in conjunction with
 many modern APIs requiring authentication including OAuth or JWT style APIs.
