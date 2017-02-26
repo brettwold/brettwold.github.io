@@ -65,28 +65,7 @@ Finally we need to make sure that our `HttpAuthInterceptor` is used throughout
 our application instead of the normal Angular2 Http class. To do this we simply
 need to define it as a new provider in the @NgModule definition.
 
-
-```typescript
-
-export function getHttpAuth(backend: ConnectionBackend, defaultOptions: RequestOptions, storage: Storage) {
-  return new HttpAuth(backend, defaultOptions, storage);
-}
-
-@NgModule({
-  ...
-
-  providers: [
-    {
-      provide: Http,
-      useFactory: getHttpAuth,
-      deps: [XHRBackend, RequestOptions, EnvService, Storage]
-    },
-    ...
-  ]
-
-  ...
-})
-```
+<script src="https://gist.github.com/brettwold/b8c4093ecb75ad2ec74d93783590d64a.js"></script>
 
 Providing a different implementation of the Http class means we can now use the
 class as we normally would for HTTP calls. If the client application is currently
