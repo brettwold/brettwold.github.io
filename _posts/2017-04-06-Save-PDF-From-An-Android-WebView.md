@@ -1,4 +1,3 @@
-
 ---
 layout: post
 title:  "Save (Print) a PDF from an Android WebView"
