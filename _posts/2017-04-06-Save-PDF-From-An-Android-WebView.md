@@ -34,7 +34,7 @@ author: Brett Cherrington
   for otehr WebView implementations this may not work. However, as long as your target device uses Chromium this works
   sucessfully. The only other restriction worth mentioning is that the PrintPdf class has to live in a package called
   `android.print`. This is so we have package level access to the inner class `LayoutResultCallback`.</p>
-  <h2>Summary<h2>
+  <h2>Summary</h2>
   <p>The examples above show how you can in only a few lines of code save (print) a PDF to a file.</p>
   <p>Have fun!</p>
 
