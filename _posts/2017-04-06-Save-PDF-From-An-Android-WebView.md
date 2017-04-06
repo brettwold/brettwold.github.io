@@ -29,11 +29,13 @@ author: Brett Cherrington
   <p>The PrintPdf class is constructed with some details about the page size (`PrintAttributes`) you want to output and the
   print method itself takes a directory and filename of where to output the file to.</p>
   <script src="https://gist.github.com/brettwold/838c092329c486b6112c8ebe94c8007e.js"></script>
+  <p>The PrintPdf class simply calls the `onLayout` and `onWrite` methods of the `PrintDocumentAdapter` in order passing
+  in the values for the print attributes and the output file as a `ParcelFileDescriptor`.</p>
   <p>As you can see there are a few nulls passed into the methods above that would normally be populated by the Android
-  PrintManager. I have tried this example on several Android devices with Chromium as the underlying default WebView and
-  for otehr WebView implementations this may not work. However, as long as your target device uses Chromium this works
-  sucessfully. The only other restriction worth mentioning is that the PrintPdf class has to live in a package called
-  `android.print`. This is so we have package level access to the inner class `LayoutResultCallback`.</p>
+  PrintManager. I have tried this example on several Android devices with Chromium as the underlying default WebView and it
+  works sucessfully. However, other WebView implementations may require these values to be set. The only other restriction
+  worth mentioning is that the PrintPdf class has to live in a package called `android.print`. This is so we have package
+  level access to the inner class `LayoutResultCallback`.</p>
   <h2>Summary</h2>
   <p>The examples above show how you can in only a few lines of code save (print) a PDF to a file.</p>
   <p>Have fun!</p>
