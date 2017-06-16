@@ -27,8 +27,8 @@ author: Brett Cherrington
   WebView itself does all the hard work of converting the page to a PDF we just save the output.</p>
   <p>The PrintPdf class is constructed with some details about the page size (`PrintAttributes`) you want to output and the
   print method itself takes a directory and filename of where to output the file to.</p>
-	<p><strong>Update 16/Jun/17: Notice that the class above must also be placed in the `android.print` package. This is because the call
-	to `LayoutResultCallback` is package local in Android. Annoying but does the job!</strong></p>
+	<p><strong>Update 16/Jun/17: Notice that the class below must also be placed in the `android.print` package. This is because the call
+	to `LayoutResultCallback` is package local in Android.</strong></p>
   <script src="https://gist.github.com/brettwold/838c092329c486b6112c8ebe94c8007e.js"></script>
   <p>The PrintPdf class simply calls the `onLayout` and `onWrite` methods of the `PrintDocumentAdapter` in order passing
   in the values for the print attributes and the output file as a `ParcelFileDescriptor`.</p>
