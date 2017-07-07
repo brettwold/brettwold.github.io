@@ -29,7 +29,7 @@ author: Brett Cherrington
   print method itself takes a directory and filename of where to output the file to.</p>
 	<p><strong>Update 16/Jun/17: Notice that the class below must also be placed in the `android.print` package. This is because the call
 	to `LayoutResultCallback` is package local in Android.</strong></p>
-	<p><string>Update 7/Jul/17: Note a minor change here to set the page range when calling `onWrite`. This fixes an issue with newer WebView implementations.</strong></p>
+	<p><strong>Update 7/Jul/17: Note a minor change here to set the `PageRange` when calling `onWrite` (instead of passing null). This fixes an issue with newer WebView implementations.</strong></p>
   <script src="https://gist.github.com/brettwold/838c092329c486b6112c8ebe94c8007e.js"></script>
   <p>The PrintPdf class simply calls the `onLayout` and `onWrite` methods of the `PrintDocumentAdapter` in order passing
   in the values for the print attributes and the output file as a `ParcelFileDescriptor`.</p>
